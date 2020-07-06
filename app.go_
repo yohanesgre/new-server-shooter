@@ -1,0 +1,63 @@
+package main
+
+import (
+	"fmt"
+	"net"
+
+	"github.com/yohanesgre/new-server-shooter/game"
+	"github.com/yohanesgre/new-server-shooter/server"
+)
+
+var world *game.World
+var input *game.Demultiplexer
+
+func initGameWorld() {
+	world = game.NewWorld(5)
+}
+
+func main() {
+	server := server.NewServer(":10001")
+	input = game.NewDemultiplexer(50)
+
+	server.ClientConnect = clientConnect
+	server.ClientDisconnect = clientDisconnect
+	server.ClientTimeout = clientTimeout
+	server.ClientValidation = validateClient
+	server.PacketHandler = handleServerPacket
+
+	server.Start()
+	fmt.Println("server started")
+	initGameWorld()
+	select {}
+}
+
+func clientConnect(conn *server.Connection, data []byte) {
+	fmt.Println("client connection with:", data)
+
+	if data[0] != 0 {
+		conn.Disconnect([]byte("not allowed"))
+	}
+}
+
+func clientDisconnect(conn *server.Connection, data []byte) {
+	fmt.Println("client disconnect")
+}
+
+func clientTimeout(conn *server.Connection, data []byte) {
+	fmt.Println("client timeout")
+}
+
+func validateClient(addr *net.UDPAddr, data []byte) bool {
+	return len(data) == 3
+}
+
+func handleServerPacket(conn *server.Connection, data []byte, channel server.Channel) {
+	// str := string(data)
+	// fmt.Println("'"+str+"'", "from", conn.Addr.String(), "on channel", channel)
+
+	// if str == "ping" {
+	// 	conn.SendReliableOrdered([]byte("pong"))
+	// 	conn.Disconnect([]byte("session end"))
+	// }
+
+}

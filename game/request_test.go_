@@ -1,0 +1,16 @@
+package game
+
+import (
+	"testing"
+)
+
+func TestRequest(t *testing.T) {
+	player := NewPlayer(1, "Test123", 5.0, 4.0, 3.0, 2.0)
+	req := NewRequest(JOIN, player)
+	b := req.MarshalRequest()
+	t.Logf("Bytes: %v", b)
+	r := UnmarshalRequest(b)
+	t.Logf("Unmarshal: %#v", r)
+	p_ := r.PayloadToPlayer()
+	t.Logf("Player: %v", p_)
+}

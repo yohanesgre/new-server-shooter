@@ -1,0 +1,47 @@
+package main
+
+import (
+	"fmt"
+	"strconv"
+	"sync"
+	"time"
+
+	"github.com/yohanesgre/new-server-shooter/game"
+)
+
+func main() {
+	var wg sync.WaitGroup
+	w := game.NewWorld(5)
+	fmt.Print("World: %#v", w)
+	w.StartWorld()
+	game.Demul.Write(*makeRequestJoin(1))
+	time.Sleep(1000 * time.Millisecond)
+	game.Demul.Write(*makeRequestJoin(2))
+	for i := 0; i < 2; i++ {
+		wg.Add(1)
+		go worker(game.Demul, i+1, &wg)
+	}
+	wg.Wait()
+	fmt.Println("End")
+	w.StopWorld()
+}
+
+func makeRequestJoin(i int) *game.Request {
+	p := game.NewPlayer(i, "Test"+strconv.Itoa(i), 0, 0, 0, 10.0)
+	r := game.NewRequest(game.JOIN, *p)
+	_m := r.MarshalRequest()
+	_u := game.UnmarshalRequest(_m)
+	return &_u
+}
+
+func worker(demul *game.Demultiplexer, id int, wg *sync.WaitGroup) {
+	defer wg.Done()
+	for i := 0; i < 11; i++ {
+		p := game.NewPlayer(id, "Test"+strconv.Itoa(id), 0.0+float64(i), 0.0+float64(i), 0.0+float64(i), 10.0)
+		r := game.NewRequest(game.MOVE, *p)
+		_m := r.MarshalRequest()
+		_u := game.UnmarshalRequest(_m)
+		demul.Write(_u)
+		time.Sleep(100 * time.Millisecond)
+	}
+}
