@@ -172,15 +172,13 @@ func (w *World) SpawnBullet(_player *Player) {
 }
 
 func (w *World) DestroyBullet(_bullet *Bullet) {
-	mutex.Lock()
 	fmt.Println("Bullet Id Destroyed: ", _bullet.Id)
 	fmt.Println("Bullet Distance : ", _bullet.Distance)
 	for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
 		if temp.Value.(*Bullet) == _bullet {
-			w.list_bullet.Remove(temp).(*Bullet).Destroy()
+			w.list_bullet.Remove(temp)
 		}
 	}
-	mutex.Unlock()
 }
 
 func (w *World) StartWorld() {
@@ -202,16 +200,13 @@ func (w *World) StartWorld() {
 		if w.list_bullet.Len() != 0 {
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
 				bul := tempBullet.Value.(*Bullet)
-				go func() {
-					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
-						w.DestroyBullet(bul)
-					}
-				}()
+				if bul.Distance > FindBulletType(bul.Bullet_type).Range {
+					w.DestroyBullet(bul)
+				} else {
+					go bul.MoveBullet(w.deltaTime100Hz, mutex)
+				}
 			}
-			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
-				go tempBullet.Value.(*Bullet).MoveBullet(w.deltaTime100Hz, mutex)
-			}
-			wg.Wait()
+
 			for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
 				hitbox := tempHitBox.Value.(*PlayerHitBox)
 				wg.Add(1)
