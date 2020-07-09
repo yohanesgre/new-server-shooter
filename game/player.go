@@ -11,6 +11,7 @@ const (
 	Bottom   Direction   = 2
 	Right    Direction   = 3
 	Left     Direction   = 4
+	speed                = 3
 )
 
 type Player struct {
@@ -40,16 +41,16 @@ func (p *Player) UpdatePlayer(_p *Player) {
 	p.State = 1
 }
 
-func (p *Player) Move(_d Direction, _a float64) {
+func (p *Player) Move(_d Direction, _a float64, dtime float64) {
 	switch _d {
 	case Top:
-		p.Pos_y = p.Pos_y + 0.25
+		p.Pos_y = Lerp(p.Pos_y, p.Pos_y+speed, dtime)
 	case Bottom:
-		p.Pos_y = p.Pos_y - 0.25
+		p.Pos_y = Lerp(p.Pos_y, p.Pos_y-speed, dtime)
 	case Right:
-		p.Pos_x = p.Pos_x + 0.25
+		p.Pos_x = Lerp(p.Pos_x, p.Pos_x+speed, dtime)
 	case Left:
-		p.Pos_x = p.Pos_x - 0.25
+		p.Pos_x = Lerp(p.Pos_x, p.Pos_x-speed, dtime)
 	}
 	p.Rotation = _a
 }

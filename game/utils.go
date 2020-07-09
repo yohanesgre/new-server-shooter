@@ -33,3 +33,5 @@ func Peek(queue []Request) Request {
 func MakeTimestamp() int64 {
 	return time.Now().UnixNano() / int64(time.Millisecond)
 }
+
+func Lerp(s, e, t float64) float64 { return s + (e-s)*t }
