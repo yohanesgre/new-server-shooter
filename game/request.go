@@ -66,7 +66,7 @@ func (r *Request) PayloadToRequestJoin() *RequestJoin {
 	p := r.Payload.(map[string]interface{})
 	return &RequestJoin{
 		p["Name"].(string),
-		float64(p["FOV"].(float32)),
+		p["FOV"].(float64),
 	}
 }
 
