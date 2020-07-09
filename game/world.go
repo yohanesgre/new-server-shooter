@@ -80,10 +80,9 @@ func (w *World) RequestHandler(_r Request) {
 		mutex.Unlock()
 
 	case SHOOT:
-		p := _r.PayloadToPlayer()
-		p_ := w.FindPlayerInList(p)
-		p_.UpdatePlayer(p)
-		w.SpawnBullet(p_)
+		r := _r.PayloadToRequestShoot()
+		p := w.FindPlayerInListById(r.Id)
+		w.SpawnBullet(p)
 	}
 }
 
@@ -200,7 +199,7 @@ func (w *World) StartWorld() {
 		if w.list_bullet.Len() != 0 {
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
 				wg.Add(1)
-				go tempBullet.Value.(*Bullet).MoveBullet(&wg)
+				go tempBullet.Value.(*Bullet).MoveBullet(&wg, w.deltaTime100Hz)
 			}
 			wg.Wait()
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {

@@ -75,3 +75,7 @@ func (p *Player) HitPlayer(_dmg float64) {
 func (p *Player) Destroy() {
 	p.Destroy()
 }
+
+func (p *Player) UpdateState(_state PlayerState) {
+	p.State = _state
+}

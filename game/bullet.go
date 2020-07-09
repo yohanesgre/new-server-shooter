@@ -1,7 +1,6 @@
 package game
 
 import (
-	"fmt"
 	"math"
 	"sync"
 )
@@ -50,8 +49,8 @@ func NewBullet(_id int, _ownerId int, _bullet_type int, _pos_x float64, _pos_y f
 	b.Owner_id = _ownerId
 	b.Bullet_type = _bullet_type
 	b.Rotation = _rotation
-	b.Pos_x = _pos_x + FindBulletType(b.Bullet_type).Speed*math.Cos(b.Rotation)*1/30
-	b.Pos_y = _pos_y + FindBulletType(b.Bullet_type).Speed*math.Sin(b.Rotation)*1/30
+	b.Pos_x = _pos_x
+	b.Pos_y = _pos_y
 	b.Distance = 0
 	return b
 }
@@ -70,17 +69,14 @@ func (b *Bullet) Destroy() {
 	b.Destroy()
 }
 
-func (b *Bullet) MoveBullet(wg *sync.WaitGroup) {
+func (b *Bullet) MoveBullet(wg *sync.WaitGroup, dTime float64) {
 	lastX := b.Pos_x
 	lastY := b.Pos_y
-	b.Pos_x = b.Pos_x + FindBulletType(b.Bullet_type).Speed*math.Cos(b.Rotation)*1/30 //*float64(time.Duration(int64(time.Second)/30))
-	b.Pos_y = b.Pos_y + FindBulletType(b.Bullet_type).Speed*math.Sin(b.Rotation)*1/30 //*float64(time.Duration(int64(time.Second)/30))
+	b.Pos_x = Lerp(b.Pos_x, b.Pos_x+FindBulletType(b.Bullet_type).Speed*math.Cos(b.Rotation), dTime) //*float64(time.Duration(int64(time.Second)/30))
+	b.Pos_y = Lerp(b.Pos_y, b.Pos_y+FindBulletType(b.Bullet_type).Speed*math.Sin(b.Rotation), dTime) //*float64(time.Duration(int64(time.Second)/30))
 	difX := b.Pos_x - lastX
 	difY := b.Pos_y - lastY
 	length := math.Sqrt(math.Pow(difX, 2) + math.Pow(difY, 2))
 	b.Distance = b.Distance + length
-	if b.Id == 1 {
-		fmt.Println("Bullet Move: ", b.Id, " | ", b.Pos_x, ", ", b.Pos_y)
-	}
 	wg.Done()
 }

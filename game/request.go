@@ -22,11 +22,20 @@ type RequestMove struct {
 	Id        int
 	Direction Direction
 	Rotation  float64
+	State     PlayerState
 }
 
 type RequestJoin struct {
 	Name string
 	FOV  float64
+}
+
+type RequestShoot struct {
+	Id int
+}
+
+type RequestReload struct {
+	Id int
 }
 
 func NewRequest(_endpoint EndpointType, _payload interface{}) *Request {
@@ -59,6 +68,7 @@ func (r *Request) PayloadToRequestMove() *RequestMove {
 		int(p["Id"].(int8)),
 		Direction(p["Direction"].(int8)),
 		p["Rotation"].(float64),
+		PlayerState(p["State"].(int8)),
 	}
 }
 
@@ -67,6 +77,20 @@ func (r *Request) PayloadToRequestJoin() *RequestJoin {
 	return &RequestJoin{
 		p["Name"].(string),
 		p["FOV"].(float64),
+	}
+}
+
+func (r *Request) PayloadToRequestShoot() *RequestShoot {
+	p := r.Payload.(map[string]interface{})
+	return &RequestShoot{
+		int(p["Id"].(int8)),
+	}
+}
+
+func (r *Request) PayloadToRequestReload() *RequestReload {
+	p := r.Payload.(map[string]interface{})
+	return &RequestReload{
+		int(p["Id"].(int8)),
 	}
 }
 
