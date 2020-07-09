@@ -60,7 +60,7 @@ func (w *World) RequestHandler(_r Request) {
 		for _, spawner := range list_spawner_player {
 			if !spawner.Filled {
 				p_ := NewPlayer(w.list_player.Len()+1, p.Name, spawner.Pos_x, spawner.Pos_y, 0.0, p.FOV)
-				h_ := NewPlayerHitBox(p_, 10, 10)
+				h_ := NewPlayerHitBox(p_, 0.55, 0.65)
 				w.list_player.PushBack(p_)
 				w.list_player_hitbox.PushBack(h_)
 				w.list_conn.Back().Value.(*server.Connection).SendReliableOrdered(w.GenerateSnapshot(seq_counter))
@@ -179,7 +179,7 @@ func (w *World) DestroyBullet(_bullet *Bullet) {
 }
 
 func (w *World) StartWorld() {
-	var wg sync.WaitGroup
+	// var wg sync.WaitGroup
 	w.initTime = MakeTimestamp()
 	w.lastTime100Hz = w.initTime
 	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz30Delay)
@@ -206,18 +206,16 @@ func (w *World) StartWorld() {
 				}
 				for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
 					hitbox := tempHitBox.Value.(*PlayerHitBox)
-					wg.Add(1)
 					go func() {
 						player := w.FindPlayerInListById(hitbox.Id)
 						hit, dmg, bul := hitbox.CheckCollision(w.list_bullet)
 						if hit {
 							player.HitPlayer(dmg)
+							fmt.Println("Hp: ", player.Hp)
 							w.DestroyBullet(bul)
 						}
-						wg.Done()
 					}()
 				}
-				wg.Wait()
 			}()
 		}
 		return nil

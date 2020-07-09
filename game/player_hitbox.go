@@ -45,12 +45,10 @@ func (h *PlayerHitBox) CheckCollision(list list.List) (bool, float64, *Bullet) {
 				break
 			}
 			if distX <= (h.Width / 2) {
-				bullet = nil
-				break
+				bullet = _b
 			}
 			if distY <= (h.Height / 2) {
-				bullet = nil
-				break
+				bullet = _b
 			}
 			dx := distX - h.Width/2
 			dy := distY - h.Height/2
