@@ -172,12 +172,15 @@ func (w *World) SpawnBullet(_player *Player) {
 }
 
 func (w *World) DestroyBullet(_bullet *Bullet) {
+	mutex.Lock()
+	fmt.Println("Bullet Id Destroyed: ", _bullet.Id)
+	fmt.Println("Bullet Distance : ", _bullet.Distance)
 	for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
 		if temp.Value.(*Bullet) == _bullet {
 			w.list_bullet.Remove(temp).(*Bullet).Destroy()
 		}
 	}
-	// fmt.Println("Bullet Destroyed: ", _bullet.Id)
+	mutex.Unlock()
 }
 
 func (w *World) StartWorld() {
@@ -204,11 +207,9 @@ func (w *World) StartWorld() {
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
 				bul := tempBullet.Value.(*Bullet)
 				go func() {
-					mutex.Lock()
 					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
 						w.DestroyBullet(bul)
 					}
-					mutex.Unlock()
 				}()
 			}
 			for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
@@ -219,9 +220,7 @@ func (w *World) StartWorld() {
 					hit, dmg, bul := hitbox.CheckCollision(w.list_bullet)
 					if hit {
 						player.HitPlayer(dmg)
-						mutex.Lock()
 						w.DestroyBullet(bul)
-						mutex.Unlock()
 					}
 					wg.Done()
 				}()
@@ -264,6 +263,6 @@ func (w *World) AddConn(conn *server.Connection) {
 func (w *World) GenerateSnapshot(seq int32) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListBulletToArray())
 	b := n.MarshalSnapshot()
-	fmt.Println("Snapshot: ", n)
+	// fmt.Println("Snapshot: ", n)
 	return b
 }
