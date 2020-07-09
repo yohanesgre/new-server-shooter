@@ -172,12 +172,12 @@ func (w *World) SpawnBullet(_player *Player) {
 }
 
 func (w *World) DestroyBullet(_bullet *Bullet) {
-	/*for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
+	for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
 		if temp.Value.(*Bullet) == _bullet {
 			w.list_bullet.Remove(temp).(*Bullet).Destroy()
 		}
-	}*/
-	fmt.Println("Bullet Destroyed: ", _bullet.Id)
+	}
+	// fmt.Println("Bullet Destroyed: ", _bullet.Id)
 }
 
 func (w *World) StartWorld() {
@@ -262,6 +262,6 @@ func (w *World) AddConn(conn *server.Connection) {
 func (w *World) GenerateSnapshot(seq int32) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListBulletToArray())
 	b := n.MarshalSnapshot()
-	// fmt.Println("Snapshot: ", n)
+	fmt.Println("Snapshot: ", n)
 	return b
 }

@@ -15,20 +15,20 @@ type BulletType struct {
 var ListOfBulletType = []*BulletType{
 	&BulletType{
 		1,
-		10,
 		5,
+		15,
 		1,
 	},
 	&BulletType{
 		2,
-		30,
-		3,
+		10,
+		20,
 		1,
 	},
 	&BulletType{
 		3,
-		50,
-		1,
+		40,
+		40,
 		1,
 	},
 }
