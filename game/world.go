@@ -51,7 +51,7 @@ func (w *World) Destroy() {
 func (w *World) RequestHandler(_r Request) {
 	switch _r.Endpoint {
 	case JOIN:
-		p := _r.PayloadToPlayer()
+		p := _r.PayloadToRequestJoin()
 		for _, spawner := range list_spawner_player {
 			if !spawner.Filled {
 				p_ := NewPlayer(w.list_player.Len()+1, p.Name, spawner.Pos_x, spawner.Pos_y, 0.0, p.FOV)
