@@ -18,6 +18,12 @@ type Request struct {
 	Payload  interface{}
 }
 
+type RequestMove struct {
+	Id        int
+	Direction Direction
+	Rotation  float64
+}
+
 func NewRequest(_endpoint EndpointType, _payload interface{}) *Request {
 	r := new(Request)
 	r.Endpoint = _endpoint
@@ -40,6 +46,15 @@ func UnmarshalRequest(_b []byte) Request {
 		panic(err)
 	}
 	return result
+}
+
+func (r *Request) PayloadToRequestMove() *RequestMove {
+	p := r.Payload.(map[string]interface{})
+	return &RequestMove{
+		int(p["Id"].(int8)),
+		Direction(p["Direction"].(int8)),
+		p["Rotation"].(float64),
+	}
 }
 
 func (r *Request) PayloadToPlayer() *Player {

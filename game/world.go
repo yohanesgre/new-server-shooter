@@ -64,11 +64,11 @@ func (w *World) RequestHandler(_r Request) {
 			}
 		}
 	case MOVE:
-		p := _r.PayloadToPlayer()
-		p_ := w.FindPlayerInList(p)
-		h_ := w.FindPlayerHitBoxInList(p_)
-		p_.UpdatePlayer(p)
-		h_.UpdatePlayerHitBox(p_)
+		r := _r.PayloadToRequestMove()
+		p := w.FindPlayerInListById(r.Id)
+		p.Move(r.Direction, r.Rotation)
+		h := w.FindPlayerHitBoxInList(p)
+		h.UpdatePlayerHitBox(p)
 
 	case SHOOT:
 		p := _r.PayloadToPlayer()
@@ -250,6 +250,6 @@ func (w *World) AddConn(conn *server.Connection) {
 func (w *World) GenerateSnapshot(seq int32) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListBulletToArray())
 	b := n.MarshalSnapshot()
-	fmt.Println("Snapshot: ", n)
+	//fmt.Println("Snapshot: ", n)
 	return b
 }
