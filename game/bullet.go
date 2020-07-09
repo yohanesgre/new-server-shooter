@@ -73,7 +73,8 @@ func (b *Bullet) Destroy() {
 	b.Destroy()
 }
 
-func (b *Bullet) MoveBullet(wg *sync.WaitGroup, dTime float64) {
+func (b *Bullet) MoveBullet(dTime float64, mutex *sync.Mutex) {
+	mutex.Lock()
 	lastX := b.Pos_x
 	lastY := b.Pos_y
 	b.Pos_x = Lerp(b.Pos_x, b.Pos_x+FindBulletType(b.Bullet_type).Speed*math.Cos(b.Rotation), dTime) //*float64(time.Duration(int64(time.Second)/30))
@@ -82,5 +83,5 @@ func (b *Bullet) MoveBullet(wg *sync.WaitGroup, dTime float64) {
 	difY := b.Pos_y - lastY
 	length := math.Sqrt(math.Pow(difX, 2) + math.Pow(difY, 2))
 	b.Distance = b.Distance + length
-	wg.Done()
+	mutex.Unlock()
 }

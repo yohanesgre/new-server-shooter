@@ -172,11 +172,11 @@ func (w *World) SpawnBullet(_player *Player) {
 }
 
 func (w *World) DestroyBullet(_bullet *Bullet) {
-	/*for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
+	for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
 		if temp.Value.(*Bullet) == _bullet {
 			w.list_bullet.Remove(temp).(*Bullet).Destroy()
 		}
-	}*/
+	}
 	// fmt.Println("Bullet Destroyed: ", _bullet.Id)
 }
 
@@ -198,16 +198,17 @@ func (w *World) StartWorld() {
 		}
 		if w.list_bullet.Len() != 0 {
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
-				wg.Add(1)
-				go tempBullet.Value.(*Bullet).MoveBullet(&wg, w.deltaTime100Hz)
+				go tempBullet.Value.(*Bullet).MoveBullet(w.deltaTime100Hz, mutex)
 			}
 			wg.Wait()
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
 				bul := tempBullet.Value.(*Bullet)
 				go func() {
+					mutex.Lock()
 					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
 						w.DestroyBullet(bul)
 					}
+					mutex.Unlock()
 				}()
 			}
 			for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
@@ -218,7 +219,9 @@ func (w *World) StartWorld() {
 					hit, dmg, bul := hitbox.CheckCollision(w.list_bullet)
 					if hit {
 						player.HitPlayer(dmg)
+						mutex.Lock()
 						w.DestroyBullet(bul)
+						mutex.Unlock()
 					}
 					wg.Done()
 				}()
