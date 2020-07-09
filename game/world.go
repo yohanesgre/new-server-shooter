@@ -201,10 +201,6 @@ func (w *World) StartWorld() {
 		}
 		if w.list_bullet.Len() != 0 {
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
-				go tempBullet.Value.(*Bullet).MoveBullet(w.deltaTime100Hz, mutex)
-			}
-			wg.Wait()
-			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
 				bul := tempBullet.Value.(*Bullet)
 				go func() {
 					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
@@ -212,6 +208,10 @@ func (w *World) StartWorld() {
 					}
 				}()
 			}
+			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
+				go tempBullet.Value.(*Bullet).MoveBullet(w.deltaTime100Hz, mutex)
+			}
+			wg.Wait()
 			for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
 				hitbox := tempHitBox.Value.(*PlayerHitBox)
 				wg.Add(1)
