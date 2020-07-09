@@ -205,8 +205,7 @@ func (w *World) StartWorld() {
 			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
 				bul := tempBullet.Value.(*Bullet)
 				go func() {
-					if bul.Distance > 100.0 {
-						//fmt.Println("Bullet Length: ", bul.Id, " | ", int(bul.Distance))
+					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
 						w.DestroyBullet(bul)
 					}
 				}()

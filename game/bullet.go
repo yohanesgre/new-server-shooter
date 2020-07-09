@@ -10,6 +10,7 @@ type BulletType struct {
 	Damage float64
 	Speed  float64
 	Radius float64
+	Range  float64
 }
 
 var ListOfBulletType = []*BulletType{
@@ -18,18 +19,21 @@ var ListOfBulletType = []*BulletType{
 		5,
 		15,
 		1,
+		12,
 	},
 	&BulletType{
 		2,
 		10,
 		20,
 		1,
+		16,
 	},
 	&BulletType{
 		3,
 		40,
 		40,
 		1,
+		50,
 	},
 }
 
