@@ -172,11 +172,11 @@ func (w *World) SpawnBullet(_player *Player) {
 }
 
 func (w *World) DestroyBullet(_bullet *Bullet) {
-	for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
+	/*for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
 		if temp.Value.(*Bullet) == _bullet {
 			w.list_bullet.Remove(temp).(*Bullet).Destroy()
 		}
-	}
+	}*/
 	// fmt.Println("Bullet Destroyed: ", _bullet.Id)
 }
 
