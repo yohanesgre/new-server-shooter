@@ -55,8 +55,8 @@ func validateClient(addr *net.UDPAddr, data []byte) bool {
 
 func handleServerPacket(conn *server.Connection, data []byte, channel server.Channel) {
 	u := game.UnmarshalRequest(data)
-	if u.Endpoint == 1 {
-		fmt.Println("Data: ", u)
-	}
+	// if u.Endpoint == 1 {
+	// fmt.Println("Data: ", u)
+	// }
 	game.Mult.Write(u)
 }

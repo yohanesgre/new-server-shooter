@@ -1,7 +1,5 @@
 package server
 
-import "fmt"
-
 type dropChannel struct {
 	channel chan interface{}
 }
@@ -14,7 +12,7 @@ func newDropChannel(channel chan interface{}) *dropChannel {
 
 func (c *dropChannel) push(i interface{}) {
 	if l := len(c.channel); l > 0 && l == cap(c.channel) {
-		fmt.Println("dropping packets from dropChannel")
+		// fmt.Println("dropping packets from dropChannel")
 		<-c.channel
 	}
 

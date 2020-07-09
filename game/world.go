@@ -17,7 +17,7 @@ var (
 )
 
 const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 30)
-const Hz200Delay time.Duration = time.Duration(int64(time.Second) / 200)
+const Hz200Delay time.Duration = time.Duration(int64(time.Second) / 120)
 
 type World struct {
 	id                 int
@@ -43,7 +43,7 @@ func NewWorld(max_player int) *World {
 	w.list_bullet.Init()
 	w.list_weapon.Init()
 	SeedSpawnerPlayer(max_player)
-	Mult = NewMultiplexer(240)
+	Mult = NewMultiplexer(120)
 	return w
 }
 
@@ -71,14 +71,11 @@ func (w *World) RequestHandler(_r Request) {
 	case MOVE:
 		r := _r.PayloadToRequestMove()
 		p := w.FindPlayerInListById(r.Id)
-		mutex.Lock()
-		p.Move(r.Direction, r.Rotation, w.deltaTime100Hz)
-		mutex.Unlock()
 		h := w.FindPlayerHitBoxInList(p)
 		mutex.Lock()
+		p.Move(r.Direction, r.Rotation, w.deltaTime100Hz)
 		h.UpdatePlayerHitBox(p)
 		mutex.Unlock()
-
 	case SHOOT:
 		r := _r.PayloadToRequestShoot()
 		p := w.FindPlayerInListById(r.Id)
@@ -168,7 +165,7 @@ func (w *World) SpawnBullet(_player *Player) {
 	// b := NewBullet(123, 412, 3112, 312, 23132, 23123)
 	//fmt.Printf("Bullet: %v\n", b)
 	w.list_bullet.PushBack(b)
-	fmt.Println("Spawn")
+	// fmt.Println("Spawn")
 }
 
 func (w *World) DestroyBullet(_bullet *Bullet) {
@@ -198,29 +195,30 @@ func (w *World) StartWorld() {
 			}
 		}
 		if w.list_bullet.Len() != 0 {
-			for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
-				bul := tempBullet.Value.(*Bullet)
-				if bul.Distance > FindBulletType(bul.Bullet_type).Range {
-					w.DestroyBullet(bul)
-				} else {
-					go bul.MoveBullet(w.deltaTime100Hz, mutex)
-				}
-			}
-
-			for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
-				hitbox := tempHitBox.Value.(*PlayerHitBox)
-				wg.Add(1)
-				go func() {
-					player := w.FindPlayerInListById(hitbox.Id)
-					hit, dmg, bul := hitbox.CheckCollision(w.list_bullet)
-					if hit {
-						player.HitPlayer(dmg)
+			go func() {
+				for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
+					bul := tempBullet.Value.(*Bullet)
+					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
 						w.DestroyBullet(bul)
+					} else {
+						go bul.MoveBullet(w.deltaTime100Hz, mutex)
 					}
-					wg.Done()
-				}()
-			}
-			wg.Wait()
+				}
+				for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
+					hitbox := tempHitBox.Value.(*PlayerHitBox)
+					wg.Add(1)
+					go func() {
+						player := w.FindPlayerInListById(hitbox.Id)
+						hit, dmg, bul := hitbox.CheckCollision(w.list_bullet)
+						if hit {
+							player.HitPlayer(dmg)
+							w.DestroyBullet(bul)
+						}
+						wg.Done()
+					}()
+				}
+				wg.Wait()
+			}()
 		}
 		return nil
 	}
