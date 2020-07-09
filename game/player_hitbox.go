@@ -56,7 +56,7 @@ func (h *PlayerHitBox) CheckCollision(list list.List) (bool, float64, *Bullet) {
 			dy := distY - h.Height/2
 			hit = dx*dx+dy*dy <= (FindBulletType(_b.Bullet_type).Radius * FindBulletType(_b.Bullet_type).Radius)
 			dmg = FindBulletType(_b.Id).Damage
-			bullet = bullet
+			bullet = _b
 			break
 		}
 	}
