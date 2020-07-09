@@ -16,16 +16,16 @@ type PlayerHitBox struct {
 func NewPlayerHitBox(player *Player, height, width float64) *PlayerHitBox {
 	p := new(PlayerHitBox)
 	p.Id = player.Id
-	p.Pos_x = player.Pos_x
-	p.Pos_y = player.Pos_y
+	p.Pos_x = float64(player.Pos_x)
+	p.Pos_y = float64(player.Pos_y)
 	p.Height = height
 	p.Width = width
 	return p
 }
 
 func (h *PlayerHitBox) UpdatePlayerHitBox(player *Player) {
-	h.Pos_x = player.Pos_x
-	h.Pos_y = player.Pos_y
+	h.Pos_x = float64(player.Pos_x)
+	h.Pos_y = float64(player.Pos_y)
 }
 
 func (h *PlayerHitBox) CheckCollision(list list.List) (bool, float64, *Bullet) {

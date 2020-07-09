@@ -26,8 +26,8 @@ func SeedSpawnerPlayer(_ammount int) {
 		if counter == 1 {
 			temp = SpawnerPlayer{
 				Id:     i + 1,
-				Pos_x:  RandFloat64(2.0, 1.0),
-				Pos_y:  RandFloat64(2.0, 1.0),
+				Pos_x:  RandFloat64(1.0, 0.5),
+				Pos_y:  RandFloat64(1.0, 0.5),
 				Filled: false,
 			}
 		} else if counter == 2 {

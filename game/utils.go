@@ -1,11 +1,11 @@
 package game
 
 import (
-	"fmt"
 	"math/rand"
+	"time"
 )
 
-//Random Float64
+//Random float64
 func RandFloat64(min, max float64) float64 {
 	return min + rand.Float64()*(max-min)
 }
@@ -13,14 +13,14 @@ func RandFloat64(min, max float64) float64 {
 //Queue Enqueue
 func Enqueue(queue []Request, element Request) []Request {
 	queue = append(queue, element) // Simply append to enqueue.
-	fmt.Println("Enqueued:", element)
+	// fmt.Println("Enqueued:", element)
 	return queue
 }
 
 //Queue Dequeue
 func Dequeue(queue []Request) []Request {
-	element := queue[0] // The first element is the one to be dequeued.
-	fmt.Println("Dequeued:", element)
+	// element := queue[0] // The first element is the one to be dequeued.
+	// fmt.Println("Dequeued:", element)
 	return queue[1:] // Slice off the element once it is dequeued.
 }
 
@@ -28,4 +28,8 @@ func Dequeue(queue []Request) []Request {
 func Peek(queue []Request) Request {
 	element := queue[0]
 	return element
+}
+
+func MakeTimestamp() int64 {
+	return time.Now().UnixNano() / int64(time.Millisecond)
 }

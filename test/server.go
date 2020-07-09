@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"net"
-	"time"
 
 	"github.com/yohanesgre/new-server-shooter/game"
 	server "github.com/yohanesgre/new-server-shooter/server"
@@ -22,29 +21,19 @@ func main() {
 	server.ClientTimeout = clientTimeout
 	server.ClientValidation = validateClient
 	server.PacketHandler = handleServerPacket
-	ticker := time.NewTicker(time.Millisecond * 1000)
-	quit := make(chan struct{})
-	go func() {
-		for {
-			select {
-			case <-ticker.C:
-				world.Timestamp = world.Timestamp + 1
-			case <-quit:
-				fmt.Println("ticker stopped")
-				return
-			}
-		}
-	}()
-	world = game.NewWorld(5)
 	server.Start()
 	fmt.Println("server started")
-	world.StartWorld()
 	select {}
 }
 
 func clientConnect(conn *server.Connection, data []byte) {
 	fmt.Println("client connection with:", data)
-	world.AddConn(conn)
+	if world == nil {
+		world = game.NewWorld(5)
+		world.AddConn(conn)
+		world.StartWorld()
+		fmt.Println("World started")
+	}
 	if data[0] != 0 {
 		conn.Disconnect([]byte("not allowed"))
 	}
@@ -64,5 +53,8 @@ func validateClient(addr *net.UDPAddr, data []byte) bool {
 
 func handleServerPacket(conn *server.Connection, data []byte, channel server.Channel) {
 	u := game.UnmarshalRequest(data)
+	if u.Endpoint == 1 {
+		fmt.Println("Data: ", u)
+	}
 	game.Mult.Write(u)
 }

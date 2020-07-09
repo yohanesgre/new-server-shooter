@@ -3,13 +3,13 @@ package game
 import "github.com/vmihailenco/msgpack/v5"
 
 type Snapshot struct {
-	Sequence  int
-	Timestamp int64
-	Players   []Player
-	Bullets   []Bullet
+	Sequence  int32    `msgpack:"Sequence"`
+	Timestamp float32  `msgpack:"Timestamp"`
+	Players   []Player `msgpack:"Players,asArray"`
+	Bullets   []Bullet `msgpack:"Bullets"`
 }
 
-func NewSnapshot(seq int, timestamp int64, arp []Player, arb []Bullet) *Snapshot {
+func NewSnapshot(seq int32, timestamp float32, arp []Player, arb []Bullet) *Snapshot {
 	return &Snapshot{seq, timestamp, arp, arb}
 }
 

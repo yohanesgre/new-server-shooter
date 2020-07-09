@@ -12,10 +12,10 @@ import (
 
 var (
 	Mult        *Multiplexer
-	seq_counter int
+	seq_counter int32
 )
 
-const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 1)
+const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 30)
 
 type World struct {
 	id                 int
@@ -26,7 +26,9 @@ type World struct {
 	list_bullet        list.List
 	list_weapon        list.List
 	game_loop          *gloop.Loop
-	Timestamp          int64
+	Timestamp          float32
+	currTime           int64
+	initTime           int64
 }
 
 func NewWorld(max_player int) *World {
@@ -56,7 +58,7 @@ func (w *World) RequestHandler(_r Request) {
 				h_ := NewPlayerHitBox(p_, 10, 10)
 				w.list_player.PushBack(p_)
 				w.list_player_hitbox.PushBack(h_)
-				w.list_conn.Back().Value.(*server.Connection).SendReliable(w.GenerateSnapshot(seq_counter))
+				w.list_conn.Back().Value.(*server.Connection).SendReliableOrdered(w.GenerateSnapshot(seq_counter))
 				fmt.Printf("Player Joined: %v\n", p.Name)
 				break
 			}
@@ -172,6 +174,7 @@ func (w *World) DestroyBullet(_bullet *Bullet) {
 
 func (w *World) StartWorld() {
 	var wg sync.WaitGroup
+	w.initTime = MakeTimestamp()
 	loop, _ := gloop.NewLoop(nil, nil, Hz30Delay, Hz30Delay)
 	w.game_loop = loop
 	render := func(step time.Duration) error {
@@ -215,6 +218,8 @@ func (w *World) StartWorld() {
 				w.RequestHandler(r)
 			}
 		}
+		w.currTime = MakeTimestamp()
+		w.Timestamp = float32(w.currTime-w.initTime) / 1000
 		for temp := w.list_conn.Front(); temp != nil; temp = temp.Next() {
 			c := temp.Value.(*server.Connection)
 			s := w.GenerateSnapshot(seq_counter)
@@ -242,8 +247,9 @@ func (w *World) AddConn(conn *server.Connection) {
 	w.list_conn.PushBack(conn)
 }
 
-func (w *World) GenerateSnapshot(seq int) []byte {
+func (w *World) GenerateSnapshot(seq int32) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListBulletToArray())
 	b := n.MarshalSnapshot()
+	fmt.Println("Snapshot: ", n)
 	return b
 }

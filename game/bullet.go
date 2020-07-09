@@ -49,9 +49,9 @@ func NewBullet(_id int, _ownerId int, _bullet_type int, _pos_x float64, _pos_y f
 	b.Id = _id
 	b.Owner_id = _ownerId
 	b.Bullet_type = _bullet_type
-	b.Pos_x = _pos_x
-	b.Pos_y = _pos_y
 	b.Rotation = _rotation
+	b.Pos_x = _pos_x + FindBulletType(b.Bullet_type).Speed*math.Cos(b.Rotation)*1/30
+	b.Pos_y = _pos_y + FindBulletType(b.Bullet_type).Speed*math.Sin(b.Rotation)*1/30
 	b.Distance = 0
 	return b
 }
