@@ -33,6 +33,8 @@ func clientConnect(conn *server.Connection, data []byte) {
 		world.AddConn(conn)
 		world.StartWorld()
 		fmt.Println("World started")
+	} else {
+		world.AddConn(conn)
 	}
 	if data[0] != 0 {
 		conn.Disconnect([]byte("not allowed"))
