@@ -57,12 +57,15 @@ func (w *World) RequestHandler(_r Request) {
 	switch _r.Endpoint {
 	case JOIN:
 		p := _r.PayloadToRequestJoin()
-		for _, spawner := range list_spawner_player {
+		for i := 0; i < len(list_spawner_player); i++ {
+			spawner := list_spawner_player[i]
 			if !spawner.Filled {
+				spawner.Filled = true
 				p_ := NewPlayer(w.list_player.Len()+1, p.Name, spawner.Pos_x, spawner.Pos_y, 0.0, p.FOV)
-				h_ := NewPlayerHitBox(p_, 0.55, 0.65)
+				h_ := NewPlayerHitBox(p_)
 				w.list_player.PushBack(p_)
 				w.list_player_hitbox.PushBack(h_)
+				fmt.Printf("Player Joined: %v\n", p_)
 				w.list_conn.Back().Value.(*server.Connection).SendReliableOrdered(w.GenerateSnapshot(seq_counter))
 				fmt.Printf("Player Joined: %v\n", p.Name)
 				break
@@ -79,7 +82,16 @@ func (w *World) RequestHandler(_r Request) {
 	case SHOOT:
 		r := _r.PayloadToRequestShoot()
 		p := w.FindPlayerInListById(r.Id)
-		w.SpawnBullet(p)
+		p.UpdateState(Shooting)
+	case COLIDED:
+		r := _r.PayloadToRequestBulletColided()
+		hitbox := w.FindPlayerHitBoxInListByHittedId(r.HittedId)
+		if hitbox.CheckHit(r.HittedId, r.Pos_x, r.Pos_y) {
+			dmg := FindBulletType(FindWeaponType(r.WeaponId).Bullet_id).Damage
+			// fmt.Println("Dmg: ", dmg)
+			w.FindPlayerInListById(r.HittedId).HitPlayer(dmg)
+			// fmt.Println("Hp: ", w.FindPlayerInListById(r.HittedId).Hp)
+		}
 	}
 }
 
@@ -143,6 +155,18 @@ func (w *World) FindPlayerHitBoxInList(_player *Player) *PlayerHitBox {
 	return result
 }
 
+//Find PlayerHitBox Pointer in List Of PlayerHitBox' Pointer with HittedId
+func (w *World) FindPlayerHitBoxInListByHittedId(_hittedId int) *PlayerHitBox {
+	var result *PlayerHitBox
+	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
+		_h := temp.Value.(*PlayerHitBox)
+		if _h.Id == _hittedId {
+			result = _h
+		}
+	}
+	return result
+}
+
 func (w *World) ListPlayerToArray() []Player {
 	result := make([]Player, 0, w.max_player)
 	for temp := w.list_player.Front(); temp != nil; temp = temp.Next() {
@@ -159,18 +183,21 @@ func (w *World) ListBulletToArray() []Bullet {
 	return result
 }
 
+func (w *World) ListHitboxToArray() []PlayerHitBox {
+	result := make([]PlayerHitBox, 0, w.list_player_hitbox.Len())
+	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
+		result = append(result, *temp.Value.(*PlayerHitBox))
+	}
+	return result
+}
+
 func (w *World) SpawnBullet(_player *Player) {
 	_w := FindWeaponType(_player.WeaponOwned)
 	b := NewBullet(w.list_bullet.Len()+1, _player.Id, _w.Bullet_id, _player.Pos_x, _player.Pos_y, _player.Rotation)
-	// b := NewBullet(123, 412, 3112, 312, 23132, 23123)
-	//fmt.Printf("Bullet: %v\n", b)
 	w.list_bullet.PushBack(b)
-	// fmt.Println("Spawn")
 }
 
 func (w *World) DestroyBullet(_bullet *Bullet) {
-	fmt.Println("Bullet Id Destroyed: ", _bullet.Id)
-	fmt.Println("Bullet Distance : ", _bullet.Distance)
 	for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
 		if temp.Value.(*Bullet) == _bullet {
 			w.list_bullet.Remove(temp)
@@ -179,7 +206,7 @@ func (w *World) DestroyBullet(_bullet *Bullet) {
 }
 
 func (w *World) StartWorld() {
-	var wg sync.WaitGroup
+	// var wg sync.WaitGroup
 	w.initTime = MakeTimestamp()
 	w.lastTime100Hz = w.initTime
 	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz30Delay)
@@ -193,33 +220,6 @@ func (w *World) StartWorld() {
 			for _, r := range *_ar {
 				go w.RequestHandler(r)
 			}
-		}
-		if w.list_bullet.Len() != 0 {
-			go func() {
-				for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
-					wg.Add(1)
-					hitbox := tempHitBox.Value.(*PlayerHitBox)
-					go func() {
-						player := w.FindPlayerInListById(hitbox.Id)
-						hit, dmg, bul := hitbox.CheckCollision(w.list_bullet)
-						if hit {
-							player.HitPlayer(dmg)
-							fmt.Println("Hp: ", player.Hp)
-							w.DestroyBullet(bul)
-						}
-						wg.Done()
-					}()
-				}
-				wg.Wait()
-				for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
-					bul := tempBullet.Value.(*Bullet)
-					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
-						w.DestroyBullet(bul)
-					} else {
-						go bul.MoveBullet(w.deltaTime100Hz, mutex)
-					}
-				}
-			}()
 		}
 		return nil
 	}
@@ -255,8 +255,36 @@ func (w *World) AddConn(conn *server.Connection) {
 }
 
 func (w *World) GenerateSnapshot(seq int32) []byte {
-	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListBulletToArray())
+	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray())
 	b := n.MarshalSnapshot()
 	// fmt.Println("Snapshot: ", n)
 	return b
 }
+
+// if w.list_bullet.Len() != 0 {
+// 	go func() {
+// 		for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
+// 			// wg.Add(1)
+// 			hitbox := tempHitBox.Value.(*PlayerHitBox)
+// 			go func() {
+// 				player := w.FindPlayerInListById(hitbox.Id)
+// 				hit, dmg, bul := hitbox.CheckCollision(w.list_bullet)
+// 				if hit {
+// 					player.HitPlayer(dmg)
+// 					fmt.Println("Hp: ", player.Hp)
+// 					w.DestroyBullet(bul)
+// 				}
+// 				// wg.Done()
+// 			}()
+// 		}
+// 		// wg.Wait()
+// 		for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
+// 			bul := tempBullet.Value.(*Bullet)
+// 			if bul.Distance > FindBulletType(bul.Bullet_type).Range {
+// 				w.DestroyBullet(bul)
+// 			} else {
+// 				go bul.MoveBullet(w.deltaTime100Hz, mutex)
+// 			}
+// 		}
+// 	}()
+// }

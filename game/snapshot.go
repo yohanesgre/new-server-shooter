@@ -6,11 +6,12 @@ type Snapshot struct {
 	Sequence  int32    `msgpack:"Sequence"`
 	Timestamp float32  `msgpack:"Timestamp"`
 	Players   []Player `msgpack:"Players,asArray"`
-	Bullets   []Bullet `msgpack:"Bullets"`
+	// Bullets   []Bullet       `msgpack:"Bullets,asArray"`
+	Hitboxs []PlayerHitBox `msgpack:"Hitboxs,asArray"`
 }
 
-func NewSnapshot(seq int32, timestamp float32, arp []Player, arb []Bullet) *Snapshot {
-	return &Snapshot{seq, timestamp, arp, arb}
+func NewSnapshot(seq int32, timestamp float32, arp []Player, arh []PlayerHitBox) *Snapshot {
+	return &Snapshot{seq, timestamp, arp, arh}
 }
 
 func (r *Snapshot) MarshalSnapshot() []byte {

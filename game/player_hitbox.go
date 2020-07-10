@@ -5,21 +5,30 @@ import (
 	"math"
 )
 
+const (
+	HitboxWidth  float64 = 0.5803897
+	HitboxHeight float64 = 0.6792674
+	OffsetX      float64 = 0.01059404
+	OffsetY      float64 = 0.1583269
+)
+
 type PlayerHitBox struct {
-	Id     int
-	Pos_x  float64
-	Pos_y  float64
-	Height float64
-	Width  float64
+	Id       int
+	Pos_x    float64
+	Pos_y    float64
+	Height   float64
+	Width    float64
+	Rotation float64
 }
 
-func NewPlayerHitBox(player *Player, height, width float64) *PlayerHitBox {
+func NewPlayerHitBox(player *Player) *PlayerHitBox {
 	p := new(PlayerHitBox)
 	p.Id = player.Id
-	p.Pos_x = float64(player.Pos_x)
-	p.Pos_y = float64(player.Pos_y)
-	p.Height = height
-	p.Width = width
+	p.Pos_x = player.Pos_x + OffsetX
+	p.Pos_y = player.Pos_y + OffsetY
+	p.Height = HitboxHeight
+	p.Width = HitboxWidth
+	p.Rotation = player.Rotation
 	return p
 }
 
@@ -59,4 +68,35 @@ func (h *PlayerHitBox) CheckCollision(list list.List) (bool, float64, *Bullet) {
 		}
 	}
 	return hit, dmg, bullet
+}
+
+func (h *PlayerHitBox) CheckHit(id int, pos_x, pos_y float64) bool {
+
+	// temporary variables to set edges for testing
+	testX := pos_x
+	testY := pos_y
+
+	// which edge is closest?
+	if pos_x < h.Pos_x { // test left edge
+		testX = h.Pos_x
+	} else if pos_x > (h.Pos_x + h.Width) { // right edge
+		testX = h.Pos_x + h.Width
+	}
+
+	if pos_x < h.Pos_y { // top edge
+		testY = h.Pos_y
+	} else if pos_y > (h.Pos_y + h.Height) { // bottom edge
+		testY = h.Pos_y + h.Height
+	}
+
+	// get distance from closest edges
+	distX := pos_x - testX
+	distY := pos_y - testY
+	distance := math.Sqrt((distX * distX) + (distY * distY))
+
+	// if the distance is less than the radius, collision!
+	if distance <= 2 {
+		return true
+	}
+	return false
 }

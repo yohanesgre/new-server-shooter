@@ -13,22 +13,22 @@ type BulletType struct {
 	Range  float64
 }
 
-var ListOfBulletType = []*BulletType{
-	&BulletType{
+var bullet_db = [...]BulletType{
+	BulletType{
 		1,
 		5,
 		15,
 		1,
 		12,
 	},
-	&BulletType{
+	BulletType{
 		2,
 		10,
 		20,
 		1,
 		16,
 	},
-	&BulletType{
+	BulletType{
 		3,
 		40,
 		40,
@@ -59,11 +59,11 @@ func NewBullet(_id int, _ownerId int, _bullet_type int, _pos_x float64, _pos_y f
 	return b
 }
 
-func FindBulletType(_id int) *BulletType {
-	var b *BulletType
-	for i := 0; i < len(ListOfBulletType); i++ {
-		if ListOfBulletType[i].Id == _id {
-			b = ListOfBulletType[i]
+func FindBulletType(_id int) BulletType {
+	var b BulletType
+	for i := 0; i < len(bullet_db); i++ {
+		if bullet_db[i].Id == _id {
+			b = bullet_db[i]
 		}
 	}
 	return b
@@ -77,8 +77,8 @@ func (b *Bullet) MoveBullet(dTime float64, mutex *sync.Mutex) {
 	if b.Distance < FindBulletType(b.Bullet_type).Range {
 		lastX := b.Pos_x
 		lastY := b.Pos_y
-		b.Pos_x = Lerp(b.Pos_x, b.Pos_x+FindBulletType(b.Bullet_type).Speed*math.Cos(b.Rotation), dTime) //*float64(time.Duration(int64(time.Second)/30))
-		b.Pos_y = Lerp(b.Pos_y, b.Pos_y+FindBulletType(b.Bullet_type).Speed*math.Sin(b.Rotation), dTime) //*float64(time.Duration(int64(time.Second)/30))
+		b.Pos_x = Lerp(lastX, b.Pos_x+FindBulletType(b.Bullet_type).Speed*math.Cos(b.Rotation), dTime) //*float64(time.Duration(int64(time.Second)/30))
+		b.Pos_y = Lerp(lastY, b.Pos_y+FindBulletType(b.Bullet_type).Speed*math.Sin(b.Rotation), dTime) //*float64(time.Duration(int64(time.Second)/30))
 		difX := b.Pos_x - lastX
 		difY := b.Pos_y - lastY
 		length := math.Sqrt(math.Pow(difX, 2) + math.Pow(difY, 2))

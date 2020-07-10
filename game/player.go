@@ -45,12 +45,18 @@ func (p *Player) Move(_d Direction, _a float64, dtime float64) {
 	switch _d {
 	case Top:
 		p.Pos_y = Lerp(p.Pos_y, p.Pos_y+speed, dtime)
+		p.UpdateState(Walking)
 	case Bottom:
 		p.Pos_y = Lerp(p.Pos_y, p.Pos_y-speed, dtime)
+		p.UpdateState(Walking)
 	case Right:
 		p.Pos_x = Lerp(p.Pos_x, p.Pos_x+speed, dtime)
+		p.UpdateState(Walking)
 	case Left:
 		p.Pos_x = Lerp(p.Pos_x, p.Pos_x-speed, dtime)
+		p.UpdateState(Walking)
+	case 0:
+		p.UpdateState(Idling)
 	}
 	p.Rotation = _a
 }

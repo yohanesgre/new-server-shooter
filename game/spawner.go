@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-var list_spawner_player []SpawnerPlayer
+var list_spawner_player []*SpawnerPlayer
 
 //Class Spawner Player
 type SpawnerPlayer struct {
@@ -18,34 +18,33 @@ type SpawnerPlayer struct {
 //Seeding Spawner Player in Server Game World
 func SeedSpawnerPlayer(_ammount int) {
 	counter := 0
-
 	for i := 0; i < _ammount; i++ {
 		counter++
 		rand.Seed(time.Now().UnixNano())
-		var temp SpawnerPlayer
+		var temp *SpawnerPlayer
 		if counter == 1 {
-			temp = SpawnerPlayer{
+			temp = &SpawnerPlayer{
 				Id:     i + 1,
 				Pos_x:  RandFloat64(1.0, 0.5),
 				Pos_y:  RandFloat64(1.0, 0.5),
 				Filled: false,
 			}
 		} else if counter == 2 {
-			temp = SpawnerPlayer{
+			temp = &SpawnerPlayer{
 				Id:     i + 1,
-				Pos_x:  RandFloat64(2.0, 1.0),
-				Pos_y:  RandFloat64(2.0, 1.0),
+				Pos_x:  RandFloat64(-2.0, -1.0),
+				Pos_y:  RandFloat64(-2.0, -1.0),
 				Filled: false,
 			}
 		} else if counter == 3 {
-			temp = SpawnerPlayer{
+			temp = &SpawnerPlayer{
 				Id:     i + 1,
 				Pos_x:  RandFloat64(-2.0, -1.0),
 				Pos_y:  RandFloat64(-2.0, -1.0),
 				Filled: false,
 			}
 		} else if counter == 4 {
-			temp = SpawnerPlayer{
+			temp = &SpawnerPlayer{
 				Id:     i + 1,
 				Pos_x:  RandFloat64(-2.0, -1.0),
 				Pos_y:  RandFloat64(-2.0, -1.0),

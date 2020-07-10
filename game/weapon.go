@@ -15,21 +15,21 @@ type WeaponDrop struct {
 	Owner_id int
 }
 
-var weapon_db = []*Weapon{
-	&Weapon{
+var weapon_db = [...]Weapon{
+	Weapon{
 		Id:        1,
 		Name:      "Handgun",
 		Bullet_id: 1,
 		Ammo:      10,
 	},
-	&Weapon{
+	Weapon{
 		Id:        2,
 		Name:      "Rifle",
 		Bullet_id: 2,
 		Ammo:      20,
 	},
-	&Weapon{
-		Id:        3,
+	Weapon{
+		Id:        4,
 		Name:      "Sniper",
 		Bullet_id: 3,
 		Ammo:      5,
@@ -46,8 +46,8 @@ func NewWeaponDrop(_id int, _type int, _pos_x float64, _pos_y float64) *WeaponDr
 	return w
 }
 
-func FindWeaponType(_id int) *Weapon {
-	var w *Weapon
+func FindWeaponType(_id int) Weapon {
+	var w Weapon
 	for i := 0; i < len(weapon_db); i++ {
 		if weapon_db[i].Id == _id {
 			w = weapon_db[i]

@@ -10,7 +10,7 @@ const (
 	JOIN    EndpointType = 1
 	MOVE    EndpointType = 2
 	SHOOT   EndpointType = 3
-	RESPAWN EndpointType = 4
+	COLIDED EndpointType = 4
 )
 
 type Request struct {
@@ -32,6 +32,13 @@ type RequestJoin struct {
 
 type RequestShoot struct {
 	Id int
+}
+
+type RequestBulletColided struct {
+	HittedId int
+	Pos_x    float64
+	Pos_y    float64
+	WeaponId int
 }
 
 type RequestReload struct {
@@ -77,6 +84,16 @@ func (r *Request) PayloadToRequestJoin() *RequestJoin {
 	return &RequestJoin{
 		p["Name"].(string),
 		p["FOV"].(float64),
+	}
+}
+
+func (r *Request) PayloadToRequestBulletColided() *RequestBulletColided {
+	p := r.Payload.(map[string]interface{})
+	return &RequestBulletColided{
+		int(p["HittedId"].(int8)),
+		p["Pos_x"].(float64),
+		p["Pos_y"].(float64),
+		int(p["WeaponId"].(int8)),
 	}
 }
 
