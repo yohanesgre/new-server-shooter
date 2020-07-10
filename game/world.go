@@ -179,7 +179,7 @@ func (w *World) DestroyBullet(_bullet *Bullet) {
 }
 
 func (w *World) StartWorld() {
-	// var wg sync.WaitGroup
+	var wg sync.WaitGroup
 	w.initTime = MakeTimestamp()
 	w.lastTime100Hz = w.initTime
 	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz30Delay)
@@ -196,15 +196,8 @@ func (w *World) StartWorld() {
 		}
 		if w.list_bullet.Len() != 0 {
 			go func() {
-				for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
-					bul := tempBullet.Value.(*Bullet)
-					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
-						w.DestroyBullet(bul)
-					} else {
-						go bul.MoveBullet(w.deltaTime100Hz, mutex)
-					}
-				}
 				for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
+					wg.Add(1)
 					hitbox := tempHitBox.Value.(*PlayerHitBox)
 					go func() {
 						player := w.FindPlayerInListById(hitbox.Id)
@@ -214,7 +207,17 @@ func (w *World) StartWorld() {
 							fmt.Println("Hp: ", player.Hp)
 							w.DestroyBullet(bul)
 						}
+						wg.Done()
 					}()
+				}
+				wg.Wait()
+				for tempBullet := w.list_bullet.Front(); tempBullet != nil; tempBullet = tempBullet.Next() {
+					bul := tempBullet.Value.(*Bullet)
+					if bul.Distance > FindBulletType(bul.Bullet_type).Range {
+						w.DestroyBullet(bul)
+					} else {
+						go bul.MoveBullet(w.deltaTime100Hz, mutex)
+					}
 				}
 			}()
 		}
