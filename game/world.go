@@ -54,6 +54,9 @@ func (w *World) Destroy() {
 //Request Handler
 //Handle all request sent by Players
 func (w *World) RequestHandler(_r Request) {
+	if w.list_player.Len() != 0 {
+		w.ForceAllPlayersIdle()
+	}
 	switch _r.Endpoint {
 	case JOIN:
 		p := _r.PayloadToRequestJoin()
@@ -92,6 +95,14 @@ func (w *World) RequestHandler(_r Request) {
 			w.FindPlayerInListById(r.HittedId).HitPlayer(dmg)
 			// fmt.Println("Hp: ", w.FindPlayerInListById(r.HittedId).Hp)
 		}
+	}
+}
+
+//Find Player Pointer in List Of Players' Pointer
+func (w *World) ForceAllPlayersIdle() {
+	for temp := w.list_player.Front(); temp != nil; temp = temp.Next() {
+		_p := temp.Value.(*Player)
+		_p.UpdateState(Idling)
 	}
 }
 
