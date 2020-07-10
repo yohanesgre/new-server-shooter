@@ -226,6 +226,11 @@ func (w *World) StartWorld() {
 		w.currTime100Hz = MakeTimestamp()
 		w.deltaTime100Hz = float64(w.currTime100Hz-w.lastTime100Hz) / 1000
 		w.lastTime100Hz = w.currTime100Hz
+	}
+	simulate := func(step time.Duration) error {
+		seq_counter = seq_counter + 1
+		w.currTime30Hz = MakeTimestamp()
+		w.Timestamp = float32(w.currTime30Hz-w.initTime) / 1000
 		if Mult.GetStream().GetLen() != 0 {
 			_ar := Mult.ReadAll()
 			for _, r := range *_ar {
@@ -233,11 +238,6 @@ func (w *World) StartWorld() {
 			}
 		}
 		return nil
-	}
-	simulate := func(step time.Duration) error {
-		seq_counter = seq_counter + 1
-		w.currTime30Hz = MakeTimestamp()
-		w.Timestamp = float32(w.currTime30Hz-w.initTime) / 1000
 		for temp := w.list_conn.Front(); temp != nil; temp = temp.Next() {
 			c := temp.Value.(*server.Connection)
 			s := w.GenerateSnapshot(seq_counter)
