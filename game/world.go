@@ -16,7 +16,7 @@ var (
 	mutex       = &sync.Mutex{}
 )
 
-const Hz50Delay time.Duration = time.Duration(int64(time.Second) / 50)
+const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 30)
 const Hz200Delay time.Duration = time.Duration(int64(time.Second) / 120)
 
 type World struct {
@@ -242,7 +242,7 @@ func (w *World) StartWorld() {
 	// var wg sync.WaitGroup
 	w.initTime = MakeTimestamp()
 	w.lastTime100Hz = w.initTime
-	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz50Delay)
+	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz30Delay)
 	w.game_loop = loop
 	render := func(step time.Duration) error {
 		w.currTime100Hz = MakeTimestamp()
