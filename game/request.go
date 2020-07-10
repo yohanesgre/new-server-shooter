@@ -7,10 +7,11 @@ import (
 type EndpointType int
 
 const (
-	JOIN    EndpointType = 1
-	MOVE    EndpointType = 2
-	SHOOT   EndpointType = 3
-	COLIDED EndpointType = 4
+	JOIN       EndpointType = 1
+	MOVE       EndpointType = 2
+	SHOOT      EndpointType = 3
+	SHOOT_DONE EndpointType = 4
+	COLIDED    EndpointType = 5
 )
 
 type Request struct {
@@ -31,6 +32,10 @@ type RequestJoin struct {
 }
 
 type RequestShoot struct {
+	Id int
+}
+
+type RequestShootDone struct {
 	Id int
 }
 
@@ -100,6 +105,13 @@ func (r *Request) PayloadToRequestBulletColided() *RequestBulletColided {
 func (r *Request) PayloadToRequestShoot() *RequestShoot {
 	p := r.Payload.(map[string]interface{})
 	return &RequestShoot{
+		int(p["Id"].(int8)),
+	}
+}
+
+func (r *Request) PayloadToRequestShootDone() *RequestShootDone {
+	p := r.Payload.(map[string]interface{})
+	return &RequestShootDone{
 		int(p["Id"].(int8)),
 	}
 }

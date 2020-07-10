@@ -16,24 +16,26 @@ var (
 	mutex       = &sync.Mutex{}
 )
 
-const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 30)
+const Hz50Delay time.Duration = time.Duration(int64(time.Second) / 50)
 const Hz200Delay time.Duration = time.Duration(int64(time.Second) / 120)
 
 type World struct {
-	id                 int
-	max_player         int
-	list_conn          list.List
-	list_player_hitbox list.List
-	list_player        list.List
-	list_bullet        list.List
-	list_weapon        list.List
-	game_loop          *gloop.Loop
-	Timestamp          float32
-	currTime30Hz       int64
-	initTime           int64
-	deltaTime100Hz     float64
-	currTime100Hz      int64
-	lastTime100Hz      int64
+	id                   int
+	max_player           int
+	list_conn            list.List
+	list_player_hitbox   list.List
+	list_player          list.List
+	list_bullet          list.List
+	list_weapon          list.List
+	list_action_shoot    list.List
+	game_loop            *gloop.Loop
+	Timestamp            float32
+	currTime30Hz         int64
+	initTime             int64
+	deltaTime100Hz       float64
+	currTime100Hz        int64
+	lastTime100Hz        int64
+	action_shoot_counter int
 }
 
 func NewWorld(max_player int) *World {
@@ -42,8 +44,10 @@ func NewWorld(max_player int) *World {
 	w.list_player.Init()
 	w.list_bullet.Init()
 	w.list_weapon.Init()
+	w.list_action_shoot.Init()
 	SeedSpawnerPlayer(max_player)
 	Mult = NewMultiplexer(120)
+	w.action_shoot_counter = 0
 	return w
 }
 
@@ -83,9 +87,19 @@ func (w *World) RequestHandler(_r Request) {
 		h.UpdatePlayerHitBox(p)
 		mutex.Unlock()
 	case SHOOT:
+		w.action_shoot_counter = w.action_shoot_counter + 1
 		r := _r.PayloadToRequestShoot()
 		p := w.FindPlayerInListById(r.Id)
 		p.UpdateState(Shooting)
+		w.list_action_shoot.PushBack(NewActionShootResponse(w.action_shoot_counter, r.Id))
+	case SHOOT_DONE:
+		r := _r.PayloadToRequestShootDone()
+		for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
+			action := temp.Value.(*ActionShootResponse)
+			if action.Id == r.Id {
+				w.list_action_shoot.Remove(temp)
+			}
+		}
 	case COLIDED:
 		r := _r.PayloadToRequestBulletColided()
 		hitbox := w.FindPlayerHitBoxInListByHittedId(r.HittedId)
@@ -202,6 +216,14 @@ func (w *World) ListHitboxToArray() []PlayerHitBox {
 	return result
 }
 
+func (w *World) ListActionShootToArray() []ActionShootResponse {
+	result := make([]ActionShootResponse, 0, w.list_action_shoot.Len())
+	for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
+		result = append(result, *temp.Value.(*ActionShootResponse))
+	}
+	return result
+}
+
 func (w *World) SpawnBullet(_player *Player) {
 	_w := FindWeaponType(_player.WeaponOwned)
 	b := NewBullet(w.list_bullet.Len()+1, _player.Id, _w.Bullet_id, _player.Pos_x, _player.Pos_y, _player.Rotation)
@@ -220,7 +242,7 @@ func (w *World) StartWorld() {
 	// var wg sync.WaitGroup
 	w.initTime = MakeTimestamp()
 	w.lastTime100Hz = w.initTime
-	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz30Delay)
+	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz50Delay)
 	w.game_loop = loop
 	render := func(step time.Duration) error {
 		w.currTime100Hz = MakeTimestamp()
@@ -267,7 +289,7 @@ func (w *World) AddConn(conn *server.Connection) {
 }
 
 func (w *World) GenerateSnapshot(seq int32) []byte {
-	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray())
+	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.ListActionShootToArray())
 	b := n.MarshalSnapshot()
 	// fmt.Println("Snapshot: ", n)
 	return b

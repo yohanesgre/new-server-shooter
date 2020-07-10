@@ -7,11 +7,12 @@ type Snapshot struct {
 	Timestamp float32  `msgpack:"Timestamp"`
 	Players   []Player `msgpack:"Players,asArray"`
 	// Bullets   []Bullet       `msgpack:"Bullets,asArray"`
-	Hitboxs []PlayerHitBox `msgpack:"Hitboxs,asArray"`
+	Hitboxs      []PlayerHitBox        `msgpack:"Hitboxs,asArray"`
+	ActionShoots []ActionShootResponse `msgpack:"ActionShoots,asArray"`
 }
 
-func NewSnapshot(seq int32, timestamp float32, arp []Player, arh []PlayerHitBox) *Snapshot {
-	return &Snapshot{seq, timestamp, arp, arh}
+func NewSnapshot(seq int32, timestamp float32, arp []Player, arh []PlayerHitBox, aras []ActionShootResponse) *Snapshot {
+	return &Snapshot{seq, timestamp, arp, arh, aras}
 }
 
 func (r *Snapshot) MarshalSnapshot() []byte {
