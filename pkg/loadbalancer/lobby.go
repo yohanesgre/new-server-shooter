@@ -191,7 +191,7 @@ func StartGame(id int) {
 
 func StartServer(port, id int) {
 	go func() {
-		cmd := exec.Command("./main", "-port="+strconv.Itoa(port))
+		cmd := exec.Command("./server", "-port="+strconv.Itoa(port))
 		fmt.Println("Start Server Game")
 		if err := cmd.Start(); err != nil {
 			log.Fatal(err)
