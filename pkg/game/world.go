@@ -75,7 +75,9 @@ func (w *World) RequestHandler(_r Request) {
 				h_ := NewPlayerHitBox(p_)
 				w.list_player.PushBack(p_)
 				w.list_player_hitbox.PushBack(h_)
-				w.List_conn.Back().Value.(*udpnetwork.Connection).SendReliableOrdered(w.GenerateSnapshot(seq_counter))
+				snap := w.GenerateSnapshot(seq_counter)
+				fmt.Println("Generated Snapshot at Join: ", snap)
+				w.List_conn.Back().Value.(*udpnetwork.Connection).SendReliableOrdered(snap)
 				break
 			}
 		}
