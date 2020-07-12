@@ -7,7 +7,7 @@ import (
 	"time"
 
 	"github.com/erinpentecost/gloop"
-	"github.com/yohanesgre/new-server-shooter/server"
+	"github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
 )
 
 var (
@@ -16,18 +16,18 @@ var (
 	mutex       = &sync.Mutex{}
 )
 
-const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 30)
+const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 60)
 const Hz200Delay time.Duration = time.Duration(int64(time.Second) / 120)
 
 type World struct {
 	id                   int
 	max_player           int
-	list_conn            list.List
+	List_conn            list.List
 	list_player_hitbox   list.List
 	list_player          list.List
 	list_bullet          list.List
 	list_weapon          list.List
-	list_action_shoot    list.List
+	list_action_shoot    []ActionShootResponse
 	game_loop            *gloop.Loop
 	Timestamp            float32
 	currTime30Hz         int64
@@ -44,7 +44,7 @@ func NewWorld(max_player int) *World {
 	w.list_player.Init()
 	w.list_bullet.Init()
 	w.list_weapon.Init()
-	w.list_action_shoot.Init()
+	w.list_action_shoot = make([]ActionShootResponse, 0, 20)
 	SeedSpawnerPlayer(max_player)
 	Mult = NewMultiplexer(120)
 	w.action_shoot_counter = 0
@@ -52,15 +52,18 @@ func NewWorld(max_player int) *World {
 }
 
 func (w *World) Destroy() {
-	w.Destroy()
+	w = nil
 }
 
 //Request Handler
 //Handle all request sent by Players
 func (w *World) RequestHandler(_r Request) {
-	if w.list_player.Len() != 0 {
-		w.ForceAllPlayersIdle()
-	}
+	// if w.list_player.Len() != 0 {
+	// 	w.ForceAllPlayersIdle()
+	// }
+	// if w.list_action_shoot.Len() != 0 {
+	// 	fmt.Println("List Actions: ", w.ListActionShootToArray())
+	// }
 	switch _r.Endpoint {
 	case JOIN:
 		p := _r.PayloadToRequestJoin()
@@ -72,9 +75,7 @@ func (w *World) RequestHandler(_r Request) {
 				h_ := NewPlayerHitBox(p_)
 				w.list_player.PushBack(p_)
 				w.list_player_hitbox.PushBack(h_)
-				fmt.Printf("Player Joined: %v\n", p_)
-				w.list_conn.Back().Value.(*server.Connection).SendReliableOrdered(w.GenerateSnapshot(seq_counter))
-				fmt.Printf("Player Joined: %v\n", p.Name)
+				w.List_conn.Back().Value.(*udpnetwork.Connection).SendReliableOrdered(w.GenerateSnapshot(seq_counter))
 				break
 			}
 		}
@@ -91,15 +92,16 @@ func (w *World) RequestHandler(_r Request) {
 		r := _r.PayloadToRequestShoot()
 		p := w.FindPlayerInListById(r.Id)
 		p.UpdateState(Shooting)
-		w.list_action_shoot.PushBack(NewActionShootResponse(w.action_shoot_counter, r.Id))
+		w.list_action_shoot = append(w.list_action_shoot, *NewActionShootResponse(w.action_shoot_counter, r.Id))
 	case SHOOT_DONE:
 		r := _r.PayloadToRequestShootDone()
-		for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
-			action := temp.Value.(*ActionShootResponse)
-			if action.Id == r.Id {
-				w.list_action_shoot.Remove(temp)
+		mutex.Lock()
+		for i := 0; i < len(w.list_action_shoot); i++ {
+			if w.list_action_shoot[i].Id == r.Id {
+				w.list_action_shoot = RemoveListActionResponseElementAt(w.list_action_shoot, i)
 			}
 		}
+		mutex.Unlock()
 	case COLIDED:
 		r := _r.PayloadToRequestBulletColided()
 		hitbox := w.FindPlayerHitBoxInListByHittedId(r.HittedId)
@@ -216,13 +218,13 @@ func (w *World) ListHitboxToArray() []PlayerHitBox {
 	return result
 }
 
-func (w *World) ListActionShootToArray() []ActionShootResponse {
-	result := make([]ActionShootResponse, 0, w.list_action_shoot.Len())
-	for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
-		result = append(result, *temp.Value.(*ActionShootResponse))
-	}
-	return result
-}
+// func (w *World) ListActionShootToArray() []ActionShootResponse {
+// 	result := make([]ActionShootResponse, 0, w.list_action_shoot.Len())
+// 	for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
+// 		result = append(result, *temp.Value.(*ActionShootResponse))
+// 	}
+// 	return result
+// }
 
 func (w *World) SpawnBullet(_player *Player) {
 	_w := FindWeaponType(_player.WeaponOwned)
@@ -258,11 +260,11 @@ func (w *World) StartWorld() {
 		if Mult.GetStream().GetLen() != 0 {
 			_ar := Mult.ReadAll()
 			for _, r := range *_ar {
-				go w.RequestHandler(r)
+				w.RequestHandler(r)
 			}
 		}
-		for temp := w.list_conn.Front(); temp != nil; temp = temp.Next() {
-			c := temp.Value.(*server.Connection)
+		for temp := w.List_conn.Front(); temp != nil; temp = temp.Next() {
+			c := temp.Value.(*udpnetwork.Connection)
 			s := w.GenerateSnapshot(seq_counter)
 			c.SendUnreliableOrdered(s)
 		}
@@ -284,12 +286,12 @@ func (w *World) StopWorld() {
 	w.game_loop.Done()
 }
 
-func (w *World) AddConn(conn *server.Connection) {
-	w.list_conn.PushBack(conn)
+func (w *World) AddConn(conn *udpnetwork.Connection) {
+	w.List_conn.PushBack(conn)
 }
 
 func (w *World) GenerateSnapshot(seq int32) []byte {
-	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.ListActionShootToArray())
+	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.list_action_shoot)
 	b := n.MarshalSnapshot()
 	// fmt.Println("Snapshot: ", n)
 	return b

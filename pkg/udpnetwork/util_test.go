@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT license.
 // More information can be found in the LICENSE file.
 
-package server
+package udpnetwork
 
 import "testing"
 
@@ -43,7 +43,7 @@ func TestUtilDifferenceSequence(t *testing.T) {
 		t.Error("Expected diff(20, 50) = 30")
 	}
 
-	if differenceSequence(65535 - 10, 20) != 30 {
+	if differenceSequence(65535-10, 20) != 30 {
 		t.Error("Expected diff(65535 - 10, 20) = 30")
 	}
 }

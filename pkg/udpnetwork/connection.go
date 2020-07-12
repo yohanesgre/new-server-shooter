@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT license.
 // More information can be found in the LICENSE file.
 
-package server
+package udpnetwork
 
 import (
 	"context"

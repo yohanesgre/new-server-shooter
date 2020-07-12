@@ -2,7 +2,7 @@
 // Use of this source code is governed by the MIT license.
 // More information can be found in the LICENSE file.
 
-package server
+package udpnetwork
 
 import "time"
 
@@ -47,10 +47,10 @@ var (
 
 var (
 	// CfgTimeoutThreshold is the time after which a connection times out if no packets have being send for the specified amount of time.
-	CfgTimeoutThreshold time.Duration = 4000
+	CfgTimeoutThreshold time.Duration = 600000
 
 	// CfgMaxPing is the max ping before a connection times out.
-	CfgMaxPing int16 = 150
+	CfgMaxPing int16 = 500
 )
 
 var (

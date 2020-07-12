@@ -1,4 +1,4 @@
-package server
+package udpnetwork
 
 type dropChannel struct {
 	channel chan interface{}

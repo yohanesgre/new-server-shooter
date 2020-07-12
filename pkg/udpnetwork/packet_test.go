@@ -2,16 +2,16 @@
 // Use of this source code is governed by the MIT license.
 // More information can be found in the LICENSE file.
 
-package server
+package udpnetwork
 
 import "testing"
 
 var testPacketDescriptors = map[descriptor]int{
-	0:                          6,
-	descReliable:               8,
-	descOrdered:                8,
-	descReliable | descOrdered: 9,
-	descAck:                    12,
+	0:                                    6,
+	descReliable:                         8,
+	descOrdered:                          8,
+	descReliable | descOrdered:           9,
+	descAck:                              12,
 	descReliable | descOrdered | descAck: 15,
 }
 

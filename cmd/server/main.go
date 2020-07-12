@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"net"
 
-	"github.com/yohanesgre/new-server-shooter/game"
-	server "github.com/yohanesgre/new-server-shooter/server"
+	"github.com/yohanesgre/new-server-shooter/pkg/game"
+	"github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
 )
 
 var (
@@ -15,10 +15,10 @@ var (
 )
 
 func main() {
-	var port = flag.Int("port", 10001, "Make new server in a new port")
+	var port = flag.String("port", "10001", "Make new server in a new port")
 	flag.Parse()
 
-	server := server.NewServer(port)
+	server := udpnetwork.NewServer(":" + *port)
 
 	server.ClientConnect = clientConnect
 	server.ClientDisconnect = clientDisconnect
@@ -30,7 +30,7 @@ func main() {
 	select {}
 }
 
-func clientConnect(conn *server.Connection, data []byte) {
+func clientConnect(conn *udpnetwork.Connection, data []byte) {
 	// if data[0] != 0 {
 	// 	conn.Disconnect([]byte("not allowed"))
 	// }
@@ -42,17 +42,17 @@ func clientConnect(conn *server.Connection, data []byte) {
 		fmt.Println("World started")
 	} else {
 		for temp := world.List_conn.Front(); temp != nil; temp = temp.Next() {
-			if conn != temp.Value.(*server.Connection) {
+			if conn != temp.Value.(*udpnetwork.Connection) {
 				world.AddConn(conn)
 			}
 		}
 	}
 }
 
-func clientDisconnect(conn *server.Connection, data []byte) {
+func clientDisconnect(conn *udpnetwork.Connection, data []byte) {
 	fmt.Println("client disconnect")
 	for temp := world.List_conn.Front(); temp != nil; temp = temp.Next() {
-		if conn == temp.Value.(*server.Connection) {
+		if conn == temp.Value.(*udpnetwork.Connection) {
 			world.List_conn.Remove(temp)
 		}
 	}
@@ -62,7 +62,7 @@ func clientDisconnect(conn *server.Connection, data []byte) {
 	}
 }
 
-func clientTimeout(conn *server.Connection, data []byte) {
+func clientTimeout(conn *udpnetwork.Connection, data []byte) {
 	fmt.Println("client timeout")
 }
 
@@ -70,7 +70,7 @@ func validateClient(addr *net.UDPAddr, data []byte) bool {
 	return len(data) == 3
 }
 
-func handleServerPacket(conn *server.Connection, data []byte, channel server.Channel) {
+func handleServerPacket(conn *udpnetwork.Connection, data []byte, channel udpnetwork.Channel) {
 	u := game.UnmarshalRequest(data)
 	// if u.Endpoint == 1 {
 	// fmt.Println("Data: ", u)

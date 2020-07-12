@@ -35,3 +35,9 @@ func MakeTimestamp() int64 {
 }
 
 func Lerp(s, e, t float64) float64 { return s + (e-s)*t }
+
+func RemoveListActionResponseElementAt(s []ActionShootResponse, i int) []ActionShootResponse {
+	s[i] = s[len(s)-1]
+	// We do not need to put s[i] at the end, as it will be discarded anyway
+	return s[:len(s)-1]
+}
