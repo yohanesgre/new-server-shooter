@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"os/exec"
 	"strconv"
 	"sync"
@@ -193,6 +194,8 @@ func StartServer(port, id int) {
 	go func() {
 		cmd := exec.Command("./server", "-port="+strconv.Itoa(port))
 		fmt.Println("Start Server Game")
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
 		if err := cmd.Start(); err != nil {
 			log.Fatal(err)
 		}
