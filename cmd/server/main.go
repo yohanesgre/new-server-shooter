@@ -27,6 +27,10 @@ func main() {
 	server.PacketHandler = handleServerPacket
 	server.Start()
 	fmt.Println("server started")
+	world = game.NewWorld(5)
+	world.AddConn(conn)
+	world.StartWorld()
+	fmt.Println("World started")
 	select {}
 }
 
@@ -35,16 +39,10 @@ func clientConnect(conn *udpnetwork.Connection, data []byte) {
 	// 	conn.Disconnect([]byte("not allowed"))
 	// }
 	fmt.Println("client connection with:", data)
-	if world == nil {
-		world = game.NewWorld(5)
-		world.AddConn(conn)
-		world.StartWorld()
-		fmt.Println("World started")
-	} else {
-		for temp := world.List_conn.Front(); temp != nil; temp = temp.Next() {
-			if conn != temp.Value.(*udpnetwork.Connection) {
-				world.AddConn(conn)
-			}
+
+	for temp := world.List_conn.Front(); temp != nil; temp = temp.Next() {
+		if conn != temp.Value.(*udpnetwork.Connection) {
+			world.AddConn(conn)
 		}
 	}
 }
