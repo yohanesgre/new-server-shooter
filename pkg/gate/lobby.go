@@ -182,7 +182,7 @@ func StartGame(id int) {
 	l := FindLobbyById(id)
 	fmt.Println("selected lobby: ", l)
 	if l.NumPlayers > 1 {
-		StartServer(l.Port, l.Id)
+		StartServer(l.Port, l.Id, l.NumPlayers)
 		for _, c := range l.Conn {
 			r := Response{int(SERVER_START), MakeLobbiesResponse()}
 			c.Write(r.MarshalResponse())
@@ -190,9 +190,9 @@ func StartGame(id int) {
 	}
 }
 
-func StartServer(port, id int) {
+func StartServer(port, id, numPlayers int) {
 	go func() {
-		cmd := exec.Command("./server", "-port="+strconv.Itoa(port))
+		cmd := exec.Command("./server", "-port="+strconv.Itoa(port), "-numPlayers="+strconv.Itoa(numPlayers))
 		fmt.Println("Start Server Game")
 		cmd.Stdout = os.Stdout
 		cmd.Stderr = os.Stderr
