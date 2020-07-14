@@ -391,9 +391,11 @@ func (w *World) generateFilteredPlayerArray(player *Player) ([]PlayerHitBox, []P
 	var arP = make([]Player, 0, w.List_player.Len())
 	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
 		p := temp.Value.(*PlayerHitBox)
-		if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
-			arH = append(arH, *p)
-			arP = append(arP, *player)
+		if p.Id != player.Id {
+			if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
+				arH = append(arH, *p)
+				arP = append(arP, *player)
+			}
 		}
 	}
 	return arH, arP
@@ -403,8 +405,10 @@ func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootRe
 	var result = make([]ActionShootResponse, 0, w.list_action_shoot.Len())
 	for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
 		p := temp.Value.(*ActionShootResponse)
-		if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
-			result = append(result, *p)
+		if p.Id != player.Id {
+			if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
+				result = append(result, *p)
+			}
 		}
 	}
 	return result
