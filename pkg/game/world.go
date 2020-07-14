@@ -291,7 +291,7 @@ func (w *World) DestroyBullet(_bullet *Bullet) {
 }
 
 func (w *World) StartWorld() {
-	// var wg sync.WaitGroup
+	var wg sync.WaitGroup
 	w.initTime = MakeTimestamp()
 	w.lastTime100Hz = w.initTime
 	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz30Delay)
@@ -314,12 +314,11 @@ func (w *World) StartWorld() {
 			}
 		}
 		for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+			wg.Add(1)
 			p := temp.Value.(*Player)
-			go func() {
-				s := w.GenerateSnapshot(seq_counter, p)
-				p.Conn.SendUnreliableOrdered(s)
-			}()
+			go w.sendFilteredSnapshot(seq_counter, p, &wg)
 		}
+		wg.Wait()
 		return nil
 	}
 	w.game_loop.Render = render
@@ -338,6 +337,12 @@ func (w *World) StopWorld() {
 	w.game_loop.Done()
 }
 
+func (w *World) sendFilteredSnapshot(seq int32, p *Player, wg *sync.WaitGroup) {
+	s := w.GenerateSnapshot(seq, p)
+	p.Conn.SendUnreliableOrdered(s)
+	wg.Done()
+}
+
 func (w *World) AddConn(conn *udpnetwork.Connection) {
 	w.List_conn.PushBack(conn)
 }
@@ -346,7 +351,7 @@ func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.generateFilteredPlayerArray(p), w.generateFilteredHitBoxArray(p), w.generateFilteredActionShootArray(p))
 	// n := NewSnapshot(seq, w.Timestamp, []Player{Player{1, "TEST12345", 123, 41, 234, 231, 23123, 123, 123, Idling}}, w.ListHitboxToArray(), w.list_action_shoot)
 	b := n.MarshalSnapshot()
-	fmt.Println("Snapshot: ", n)
+	// fmt.Println("Snapshot: ", n)
 	return b
 }
 
