@@ -315,12 +315,14 @@ func (w *World) StartWorld() {
 				w.RequestHandler(r)
 			}
 		}
-		for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
-			wg.Add(1)
-			p := temp.Value.(*Player)
-			go w.sendFilteredSnapshot(seq_counter, p, &wg)
+		if w.max_player == w.List_player.Len() {
+			for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+				wg.Add(1)
+				p := temp.Value.(*Player)
+				go w.sendFilteredSnapshot(seq_counter, p, &wg)
+			}
+			wg.Wait()
 		}
-		wg.Wait()
 		return nil
 	}
 	w.game_loop.Render = render
