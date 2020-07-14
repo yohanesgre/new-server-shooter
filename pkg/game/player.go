@@ -1,6 +1,10 @@
 package game
 
-import "github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
+import (
+	"math"
+
+	"github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
+)
 
 type PlayerState int
 type Direction int
@@ -87,4 +91,34 @@ func (p *Player) Destroy() {
 
 func (p *Player) UpdateState(_state PlayerState) {
 	p.State = _state
+}
+
+func (h *Player) CheckCulled(pos_x, pos_y, fov float64) bool {
+	// temporary variables to set edges for testing
+	testX := pos_x
+	testY := pos_y
+
+	// which edge is closest?
+	if pos_x < h.Pos_x { // test left edge
+		testX = h.Pos_x
+	} else if pos_x > h.Pos_x { // right edge
+		testX = h.Pos_x
+	}
+
+	if pos_x < h.Pos_y { // top edge
+		testY = h.Pos_y
+	} else if pos_y > h.Pos_y { // bottom edge
+		testY = h.Pos_y
+	}
+
+	// get distance from closest edges
+	distX := pos_x - testX
+	distY := pos_y - testY
+	distance := math.Sqrt((distX * distX) + (distY * distY))
+
+	// if the distance is less than the radius, collision!
+	if distance <= fov {
+		return true
+	}
+	return false
 }

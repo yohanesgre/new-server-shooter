@@ -348,7 +348,8 @@ func (w *World) AddConn(conn *udpnetwork.Connection) {
 }
 
 func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
-	n := NewSnapshot(seq, w.Timestamp, w.generateFilteredPlayerArray(p), w.generateFilteredHitBoxArray(p), w.generateFilteredActionShootArray(p))
+	arH, arP := w.generateFilteredPlayerArray(p)
+	n := NewSnapshot(seq, w.Timestamp, arP, arH, w.generateFilteredActionShootArray(p))
 	// n := NewSnapshot(seq, w.Timestamp, []Player{Player{1, "TEST12345", 123, 41, 234, 231, 23123, 123, 123, Idling}}, w.ListHitboxToArray(), w.list_action_shoot)
 	b := n.MarshalSnapshot()
 	// fmt.Println("Snapshot: ", n)
@@ -361,33 +362,35 @@ func (w *World) GenerateSnapshotReliable(seq int32) []byte {
 	return b
 }
 
-func (w *World) generateFilteredPlayerArray(player *Player) []Player {
-	var result = make([]Player, 0, w.List_player.Len())
-	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
-		p := temp.Value.(*Player)
-		if p.Pos_x < player.FOV && p.Pos_y < player.FOV {
-			result = append(result, *p)
-		}
-	}
-	return result
-}
+// func (w *World) generateFilteredPlayerArray(player *Player) []Player {
+// 	var result = make([]Player, 0, w.List_player.Len())
+// 	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+// 		p := temp.Value.(*Player)
+// 		if p.Pos_x < player.FOV && p.Pos_y < player.FOV {
+// 			result = append(result, *p)
+// 		}
+// 	}
+// 	return result
+// }
 
-func (w *World) generateFilteredHitBoxArray(player *Player) []PlayerHitBox {
-	var result = make([]PlayerHitBox, 0, w.list_player_hitbox.Len())
+func (w *World) generateFilteredPlayerArray(player *Player) ([]PlayerHitBox, []Player) {
+	var arH = make([]PlayerHitBox, 0, w.list_player_hitbox.Len())
+	var arP = make([]Player, 0, w.List_player.Len())
 	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
 		p := temp.Value.(*PlayerHitBox)
-		if p.Pos_x < player.FOV && p.Pos_y < player.FOV {
-			result = append(result, *p)
+		if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
+			arH = append(arH, *p)
+			arP = append(arP, *player)
 		}
 	}
-	return result
+	return arH, arP
 }
 
 func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootResponse {
 	var result = make([]ActionShootResponse, 0, w.list_action_shoot.Len())
 	for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
 		p := temp.Value.(*ActionShootResponse)
-		if p.Pos_x < player.FOV && p.Pos_y < player.FOV {
+		if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
 			result = append(result, *p)
 		}
 	}

@@ -100,3 +100,9 @@ func (h *PlayerHitBox) CheckHit(id int, pos_x, pos_y float64) bool {
 	}
 	return false
 }
+
+func (h *PlayerHitBox) CheckCulled(pos_x, pos_y, fov float64) bool {
+	dx := math.Max(math.Abs(pos_x-h.Pos_x), math.Abs((h.Pos_x+h.Width)-pos_x))
+	dy := math.Max(math.Abs(pos_y-h.Pos_y), math.Abs((h.Pos_x+h.Height)-pos_y))
+	return (fov * fov) >= (dx*dx)+(dy*dy)
+}
