@@ -80,12 +80,14 @@ func (w *World) RequestHandler(_r Request) {
 				p.Pos_y = spawner.Pos_y
 				h := NewPlayerHitBox(p)
 				w.list_player_hitbox.PushBack(h)
-				snap := w.GenerateSnapshotReliable(seq_counter)
-				for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
-					c := temp.Value.(*Player)
-					c.Conn.SendReliableOrdered(snap)
-				}
 				break
+			}
+		}
+		if w.max_player == w.List_player.Len() {
+			snap := w.GenerateSnapshotReliable(seq_counter)
+			for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+				c := temp.Value.(*Player)
+				c.Conn.SendReliableOrdered(snap)
 			}
 		}
 	case MOVE:

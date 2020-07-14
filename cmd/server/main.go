@@ -17,6 +17,7 @@ var (
 
 func main() {
 	var port = flag.String("port", "10001", "Make new server in a new port")
+	var numPlayers = flag.Int("numPlayers", 2, "Insert Connected Players")
 	flag.Parse()
 
 	server := udpnetwork.NewServer(":" + *port)
@@ -28,7 +29,7 @@ func main() {
 	server.PacketHandler = handleServerPacket
 	server.Start()
 	fmt.Println("server started")
-	world = game.NewWorld(5)
+	world = game.NewWorld(*numPlayers)
 	world.StartWorld()
 	fmt.Println("World started")
 	select {}
