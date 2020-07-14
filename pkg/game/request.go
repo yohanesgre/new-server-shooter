@@ -2,6 +2,7 @@ package game
 
 import (
 	"github.com/vmihailenco/msgpack/v5"
+	"github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
 )
 
 type EndpointType int
@@ -29,10 +30,13 @@ type RequestMove struct {
 type RequestJoin struct {
 	Name string
 	FOV  float64
+	Conn *udpnetwork.Connection
 }
 
 type RequestShoot struct {
-	Id int
+	Id    int
+	Pos_x float64
+	Pos_y float64
 }
 
 type RequestShootDone struct {
@@ -89,6 +93,7 @@ func (r *Request) PayloadToRequestJoin() *RequestJoin {
 	return &RequestJoin{
 		p["Name"].(string),
 		p["FOV"].(float64),
+		nil,
 	}
 }
 
@@ -106,6 +111,8 @@ func (r *Request) PayloadToRequestShoot() *RequestShoot {
 	p := r.Payload.(map[string]interface{})
 	return &RequestShoot{
 		int(p["Id"].(int8)),
+		float64(p["Pos_x"].(float32)),
+		float64(p["Pos_x"].(float32)),
 	}
 }
 
@@ -136,6 +143,7 @@ func (r *Request) PayloadToPlayer() *Player {
 		int(p["Ammo"].(int8)),
 		int(p["WeaponOwned"].(int8)),
 		PlayerState(p["State"].(int8)),
+		nil,
 	}
 }
 

@@ -10,8 +10,9 @@ import (
 )
 
 var (
-	world *game.World
-	mult  *game.Multiplexer
+	world           *game.World
+	mult            *game.Multiplexer
+	connectedPlayer int
 )
 
 func main() {
@@ -38,25 +39,15 @@ func clientConnect(conn *udpnetwork.Connection, data []byte) {
 	// 	conn.Disconnect([]byte("not allowed"))
 	// }
 	fmt.Println("client connection with:", data)
-	if world.List_conn.Len() != 0 {
-		for temp := world.List_conn.Front(); temp != nil; temp = temp.Next() {
-			if conn != temp.Value.(*udpnetwork.Connection) {
-				world.AddConn(conn)
-			}
-		}
-	} else {
-		world.AddConn(conn)
-	}
-
+	connectedPlayer++
+	p := game.NewPlayer(connectedPlayer, "", 0.0, 0.0, 0.0, 0.0, conn)
+	world.List_player.PushBack(p)
 }
 
 func clientDisconnect(conn *udpnetwork.Connection, data []byte) {
 	fmt.Println("client disconnect")
-	for temp := world.List_conn.Front(); temp != nil; temp = temp.Next() {
-		if conn == temp.Value.(*udpnetwork.Connection) {
-			world.List_conn.Remove(temp)
-		}
-	}
+	world.DestroyHitboxInListByPlayer(world.FindPlayerInListByConn(conn))
+	world.DestroyPlayerInListByConn(conn)
 	if world.List_conn.Len() == 0 {
 		world.Destroy()
 		world = nil
@@ -73,8 +64,11 @@ func validateClient(addr *net.UDPAddr, data []byte) bool {
 
 func handleServerPacket(conn *udpnetwork.Connection, data []byte, channel udpnetwork.Channel) {
 	u := game.UnmarshalRequest(data)
-	// if u.Endpoint == 1 {
 	// fmt.Println("Data: ", u)
-	// }
+	if u.Endpoint == 1 {
+		np := u.PayloadToRequestJoin()
+		np.Conn = conn
+		u.Payload = np
+	}
 	game.Mult.Write(u)
 }

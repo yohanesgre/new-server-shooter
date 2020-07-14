@@ -3,6 +3,8 @@ package game
 import (
 	"math/rand"
 	"time"
+
+	"github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
 )
 
 //Random float64
@@ -37,6 +39,12 @@ func MakeTimestamp() int64 {
 func Lerp(s, e, t float64) float64 { return s + (e-s)*t }
 
 func RemoveListActionResponseElementAt(s []ActionShootResponse, i int) []ActionShootResponse {
+	s[i] = s[len(s)-1]
+	// We do not need to put s[i] at the end, as it will be discarded anyway
+	return s[:len(s)-1]
+}
+
+func RemoveConnElementAt(s []*udpnetwork.Connection, i int) []*udpnetwork.Connection {
 	s[i] = s[len(s)-1]
 	// We do not need to put s[i] at the end, as it will be discarded anyway
 	return s[:len(s)-1]

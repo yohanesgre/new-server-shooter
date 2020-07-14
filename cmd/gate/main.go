@@ -6,7 +6,7 @@ import (
 	"net"
 	"strconv"
 
-	"github.com/yohanesgre/new-server-shooter/pkg/loadbalancer"
+	"github.com/yohanesgre/new-server-shooter/pkg/gate"
 )
 
 func main() {
@@ -57,28 +57,28 @@ func handleConn(conn net.Conn) {
 
 		if len(buf) > 0 {
 			fmt.Println("received not 0")
-			packet := loadbalancer.UnmarshalRequest(buf[:n])
+			packet := gate.UnmarshalRequest(buf[:n])
 			switch packet.Endpoint {
-			case int(loadbalancer.GET_LOBBIES):
+			case int(gate.GET_LOBBIES):
 				fmt.Printf("Client %v request to get Lobbies Index\n", conn.RemoteAddr)
-				loadbalancer.IndexLobbies(conn)
-			case int(loadbalancer.CREATE_LOBBY):
+				gate.IndexLobbies(conn)
+			case int(gate.CREATE_LOBBY):
 				fmt.Printf("Client %v request to create Lobby\n", conn.RemoteAddr)
-				loadbalancer.CreateLobby(conn, packet.Payload[1])
-			case int(loadbalancer.CONNECT_LOBBY):
+				gate.CreateLobby(conn, packet.Payload[1])
+			case int(gate.CONNECT_LOBBY):
 				fmt.Printf("Client %v request to connect to Lobby %d\n", conn.RemoteAddr, packet.Payload)
 				i, err := strconv.Atoi(packet.Payload[0])
 				if err != nil {
 					log.Println(err)
 				}
-				loadbalancer.ConnectLobby(i, packet.Payload[1], conn)
-			case int(loadbalancer.START_GAME):
+				gate.ConnectLobby(i, packet.Payload[1], conn)
+			case int(gate.START_GAME):
 				fmt.Println("Start Server")
 				i, err := strconv.Atoi(packet.Payload[0])
 				if err != nil {
 					log.Println(err)
 				}
-				loadbalancer.StartGame(i)
+				gate.StartGame(i)
 			default:
 				conn.Write([]byte{0, 1, 2})
 			}

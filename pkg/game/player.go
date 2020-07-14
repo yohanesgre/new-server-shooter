@@ -1,5 +1,7 @@
 package game
 
+import "github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
+
 type PlayerState int
 type Direction int
 
@@ -25,11 +27,12 @@ type Player struct {
 	Ammo        int
 	WeaponOwned int
 	State       PlayerState
+	Conn        *udpnetwork.Connection
 }
 
-func NewPlayer(_id int, _name string, _pos_x, _pos_y, _rotation, _fov float64) *Player {
+func NewPlayer(_id int, _name string, _pos_x, _pos_y, _rotation, _fov float64, conn *udpnetwork.Connection) *Player {
 	p := &Player{
-		_id, _name, _pos_x, _pos_y, _rotation, _fov, 100, 0, 1, 1,
+		_id, _name, _pos_x, _pos_y, _rotation, _fov, 100, 0, 1, 1, conn,
 	}
 	return p
 }

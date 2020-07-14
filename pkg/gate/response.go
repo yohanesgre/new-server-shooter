@@ -1,4 +1,4 @@
-package loadbalancer
+package gate
 
 import (
 	"github.com/vmihailenco/msgpack/v5"

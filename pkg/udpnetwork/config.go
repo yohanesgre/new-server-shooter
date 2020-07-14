@@ -8,7 +8,7 @@ import "time"
 
 var (
 	// CfgMTU is the maximum byte size of a packet (header included).
-	CfgMTU = 1024
+	CfgMTU = 512
 
 	// CfgProtocolID is the identification number send with every rmnp packet to filter out unwanted traffic.
 	CfgProtocolID byte = 231
