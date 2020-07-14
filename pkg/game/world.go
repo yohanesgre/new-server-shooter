@@ -396,6 +396,9 @@ func (w *World) generateFilteredPlayerArray(player *Player) ([]PlayerHitBox, []P
 				arH = append(arH, *p)
 				arP = append(arP, *player)
 			}
+		} else {
+			arH = append(arH, *p)
+			arP = append(arP, *player)
 		}
 	}
 	return arH, arP
@@ -409,6 +412,8 @@ func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootRe
 			if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
 				result = append(result, *p)
 			}
+		} else {
+			result = append(result, *p)
 		}
 	}
 	return result
