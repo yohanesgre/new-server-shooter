@@ -29,6 +29,7 @@ type World struct {
 	list_weapon          list.List
 	list_action_shoot    list.List
 	game_loop            *gloop.Loop
+	start_game           bool
 	Timestamp            float32
 	currTime30Hz         int64
 	initTime             int64
@@ -83,7 +84,15 @@ func (w *World) RequestHandler(_r Request) {
 				break
 			}
 		}
-		if w.max_player == w.List_player.Len() {
+		c_name := 0
+		for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+			c := temp.Value.(*Player)
+			if c.Name != "" {
+				c_name++
+			}
+		}
+		if c_name == w.max_player {
+			w.start_game = true
 			snap := w.GenerateSnapshotReliable(seq_counter)
 			for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
 				c := temp.Value.(*Player)
@@ -315,7 +324,7 @@ func (w *World) StartWorld() {
 				w.RequestHandler(r)
 			}
 		}
-		if w.max_player == w.List_player.Len() {
+		if w.start_game {
 			for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
 				wg.Add(1)
 				p := temp.Value.(*Player)
