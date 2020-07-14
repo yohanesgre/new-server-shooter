@@ -92,10 +92,8 @@ func (w *World) RequestHandler(_r Request) {
 		r := _r.PayloadToRequestMove()
 		p := w.FindPlayerInListById(r.Id)
 		h := w.FindPlayerHitBoxInList(p)
-		mutex.Lock()
 		p.Move(r.Direction, r.Rotation, w.deltaTime100Hz)
 		h.UpdatePlayerHitBox(p)
-		mutex.Unlock()
 	case SHOOT:
 		w.action_shoot_counter = w.action_shoot_counter + 1
 		r := _r.PayloadToRequestShoot()
