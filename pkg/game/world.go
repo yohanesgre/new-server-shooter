@@ -348,7 +348,7 @@ func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.generateFilteredPlayerArray(p), w.generateFilteredHitBoxArray(p), w.generateFilteredActionShootArray(p))
 	// n := NewSnapshot(seq, w.Timestamp, []Player{Player{1, "TEST12345", 123, 41, 234, 231, 23123, 123, 123, Idling}}, w.ListHitboxToArray(), w.list_action_shoot)
 	b := n.MarshalSnapshot()
-	// fmt.Println("Snapshot: ", n)
+	fmt.Println("Snapshot: ", n)
 	return b
 }
 
