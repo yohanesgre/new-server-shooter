@@ -16,14 +16,14 @@ var (
 	mutex       = &sync.Mutex{}
 )
 
-const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 60)
+const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 30)
 const Hz200Delay time.Duration = time.Duration(int64(time.Second) / 120)
 
 type World struct {
 	id                   int
-	max_player           int
+	Max_player           int
 	List_conn            list.List
-	list_player_hitbox   list.List
+	List_player_hitbox   list.List
 	List_player          list.List
 	list_bullet          list.List
 	list_weapon          list.List
@@ -39,15 +39,15 @@ type World struct {
 	action_shoot_counter int
 }
 
-func NewWorld(max_player int) *World {
+func NewWorld(Max_player int) *World {
 	w := new(World)
-	w.max_player = max_player
+	w.Max_player = Max_player
 	w.List_player.Init()
 	w.list_bullet.Init()
 	w.list_weapon.Init()
 	w.list_action_shoot.Init()
 	w.List_conn.Init()
-	SeedSpawnerPlayer(max_player)
+	SeedSpawnerPlayer(Max_player)
 	Mult = NewMultiplexer(120)
 	w.action_shoot_counter = 0
 	return w
@@ -75,12 +75,16 @@ func (w *World) RequestHandler(_r Request) {
 				spawner.Filled = true
 				r := _r.Payload.(*RequestJoin)
 				p := w.FindPlayerInListByConn(r.Conn)
+				// fmt.Println("Player Before: ", p)
 				p.Name = r.Name
 				p.FOV = r.FOV
 				p.Pos_x = spawner.Pos_x
 				p.Pos_y = spawner.Pos_y
-				h := NewPlayerHitBox(p)
-				w.list_player_hitbox.PushBack(h)
+				// fmt.Println("Player After: ", p)
+				h := w.FindPlayerHitBoxInList(p)
+				// fmt.Println("Hitbox Before: ", h)
+				h.UpdatePlayerHitBox(p)
+				// fmt.Println("Hitbox After: ", h)
 				break
 			}
 		}
@@ -91,20 +95,23 @@ func (w *World) RequestHandler(_r Request) {
 				c_name++
 			}
 		}
-		if c_name == w.max_player {
-			w.start_game = true
+		if c_name == w.Max_player {
 			snap := w.GenerateSnapshotReliable(seq_counter)
 			for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
 				c := temp.Value.(*Player)
 				c.Conn.SendReliableOrdered(snap)
 			}
+
+			w.start_game = true
 		}
 	case MOVE:
 		r := _r.PayloadToRequestMove()
 		p := w.FindPlayerInListById(r.Id)
 		h := w.FindPlayerHitBoxInList(p)
+		// mutex.Lock()
 		p.Move(r.Direction, r.Rotation, w.deltaTime100Hz)
 		h.UpdatePlayerHitBox(p)
+		// mutex.Unlock()
 	case SHOOT:
 		w.action_shoot_counter = w.action_shoot_counter + 1
 		r := _r.PayloadToRequestShoot()
@@ -121,7 +128,10 @@ func (w *World) RequestHandler(_r Request) {
 		}
 	case COLIDED:
 		r := _r.PayloadToRequestBulletColided()
+		// fmt.Printf("payload: %#v\n", r)
+		// fmt.Printf("hitted id: %#v\n", r.HittedId)
 		hitbox := w.FindPlayerHitBoxInListByHittedId(r.HittedId)
+		// fmt.Printf("hitbox: %#v\n", hitbox)
 		if hitbox.CheckHit(r.HittedId, r.Pos_x, r.Pos_y) {
 			dmg := FindBulletType(FindWeaponType(r.WeaponId).Bullet_id).Damage
 			// fmt.Println("Dmg: ", dmg)
@@ -200,7 +210,7 @@ func (w *World) FindWeaponDropInList(_weapon *WeaponDrop) *WeaponDrop {
 //Find PlayerHitBox Pointer in List Of PlayerHitBox' Pointer with Player
 func (w *World) FindPlayerHitBoxInList(_player *Player) *PlayerHitBox {
 	var result *PlayerHitBox
-	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
+	for temp := w.List_player_hitbox.Front(); temp != nil; temp = temp.Next() {
 		_h := temp.Value.(*PlayerHitBox)
 		if _h.Id == _player.Id {
 			result = _h
@@ -212,7 +222,7 @@ func (w *World) FindPlayerHitBoxInList(_player *Player) *PlayerHitBox {
 //Find PlayerHitBox Pointer in List Of PlayerHitBox' Pointer with HittedId
 func (w *World) FindPlayerHitBoxInListByHittedId(_hittedId int) *PlayerHitBox {
 	var result *PlayerHitBox
-	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
+	for temp := w.List_player_hitbox.Front(); temp != nil; temp = temp.Next() {
 		_h := temp.Value.(*PlayerHitBox)
 		if _h.Id == _hittedId {
 			result = _h
@@ -222,10 +232,10 @@ func (w *World) FindPlayerHitBoxInListByHittedId(_hittedId int) *PlayerHitBox {
 }
 
 func (w *World) DestroyHitboxInListByPlayer(player *Player) {
-	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
+	for temp := w.List_player_hitbox.Front(); temp != nil; temp = temp.Next() {
 		_p := temp.Value.(*PlayerHitBox)
 		if _p.Id == player.Id {
-			w.list_player_hitbox.Remove(temp)
+			w.List_player_hitbox.Remove(temp)
 		}
 	}
 }
@@ -240,7 +250,7 @@ func (w *World) DestroyPlayerInListByConn(conn *udpnetwork.Connection) {
 }
 
 func (w *World) ListPlayerToArray() []Player {
-	result := make([]Player, 0, w.max_player)
+	result := make([]Player, 0, w.Max_player)
 	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
 		result = append(result, *temp.Value.(*Player))
 	}
@@ -256,8 +266,8 @@ func (w *World) ListBulletToArray() []Bullet {
 }
 
 func (w *World) ListHitboxToArray() []PlayerHitBox {
-	result := make([]PlayerHitBox, 0, w.list_player_hitbox.Len())
-	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
+	result := make([]PlayerHitBox, 0, w.List_player_hitbox.Len())
+	for temp := w.List_player_hitbox.Front(); temp != nil; temp = temp.Next() {
 		result = append(result, *temp.Value.(*PlayerHitBox))
 	}
 	return result
@@ -326,8 +336,9 @@ func (w *World) StartWorld() {
 		}
 		if w.start_game {
 			for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
-				wg.Add(1)
 				p := temp.Value.(*Player)
+				wg.Add(1)
+				// fmt.Println("Before Filtered Snapshot: ", p)
 				go w.sendFilteredSnapshot(seq_counter, p, &wg)
 			}
 			wg.Wait()
@@ -362,7 +373,7 @@ func (w *World) AddConn(conn *udpnetwork.Connection) {
 
 func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 	arH, arP := w.generateFilteredPlayerArray(p)
-	n := NewSnapshot(seq, w.Timestamp, arP, arH, w.generateFilteredActionShootArray(p))
+	n := NewSnapshot(seq, w.Timestamp, arP, arH, w.ListActionShootToArray())
 	// n := NewSnapshot(seq, w.Timestamp, []Player{Player{1, "TEST12345", 123, 41, 234, 231, 23123, 123, 123, Idling}}, w.ListHitboxToArray(), w.list_action_shoot)
 	b := n.MarshalSnapshot()
 	// fmt.Println("Snapshot: ", n)
@@ -371,6 +382,7 @@ func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 
 func (w *World) GenerateSnapshotReliable(seq int32) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.ListActionShootToArray())
+	fmt.Println("Snap: ", n)
 	b := n.MarshalSnapshot()
 	return b
 }
@@ -387,20 +399,24 @@ func (w *World) GenerateSnapshotReliable(seq int32) []byte {
 // }
 
 func (w *World) generateFilteredPlayerArray(player *Player) ([]PlayerHitBox, []Player) {
-	var arH = make([]PlayerHitBox, 0, w.list_player_hitbox.Len())
+	var arH = make([]PlayerHitBox, 0, w.List_player_hitbox.Len())
 	var arP = make([]Player, 0, w.List_player.Len())
-	for temp := w.list_player_hitbox.Front(); temp != nil; temp = temp.Next() {
-		p := temp.Value.(*PlayerHitBox)
-		if p.Id != player.Id {
-			if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
-				arH = append(arH, *p)
-				arP = append(arP, *player)
-			}
+	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+		p := temp.Value.(*Player)
+
+		if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
+			arH = append(arH, *w.FindPlayerHitBoxInList(p))
+			arP = append(arP, *p)
 		} else {
-			arH = append(arH, *p)
-			arP = append(arP, *player)
+			arH = append(arH, PlayerHitBox{})
+			arP = append(arP, Player{})
 		}
+		// } else {
+		// 	arH = append(arH, *w.FindPlayerHitBoxInList(p))
+		// 	arP = append(arP, *player)
+		// }
 	}
+	// fmt.Println("Player: ", player, "| arP: ", arP)
 	return arH, arP
 }
 
@@ -408,12 +424,10 @@ func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootRe
 	var result = make([]ActionShootResponse, 0, w.list_action_shoot.Len())
 	for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
 		p := temp.Value.(*ActionShootResponse)
-		if p.Id != player.Id {
-			if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
-				result = append(result, *p)
-			}
-		} else {
+		if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
 			result = append(result, *p)
+		} else {
+			result = append(result, ActionShootResponse{})
 		}
 	}
 	return result
@@ -421,7 +435,7 @@ func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootRe
 
 // if w.list_bullet.Len() != 0 {
 // 	go func() {
-// 		for tempHitBox := w.list_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
+// 		for tempHitBox := w.List_player_hitbox.Front(); tempHitBox != nil; tempHitBox = tempHitBox.Next() {
 // 			// wg.Add(1)
 // 			hitbox := tempHitBox.Value.(*PlayerHitBox)
 // 			go func() {

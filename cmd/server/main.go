@@ -30,8 +30,6 @@ func main() {
 	server.Start()
 	fmt.Println("server started")
 	world = game.NewWorld(*numPlayers)
-	world.StartWorld()
-	fmt.Println("World started")
 	select {}
 }
 
@@ -42,7 +40,13 @@ func clientConnect(conn *udpnetwork.Connection, data []byte) {
 	fmt.Println("client connection with:", data)
 	connectedPlayer++
 	p := game.NewPlayer(connectedPlayer, "", 0.0, 0.0, 0.0, 0.0, conn)
+	h := game.NewPlayerHitBox(p)
 	world.List_player.PushBack(p)
+	world.List_player_hitbox.PushBack(h)
+	conn.SendReliableOrdered([]byte("Welcome"))
+	if connectedPlayer == world.Max_player {
+		world.StartWorld()
+	}
 }
 
 func clientDisconnect(conn *udpnetwork.Connection, data []byte) {
@@ -65,11 +69,11 @@ func validateClient(addr *net.UDPAddr, data []byte) bool {
 
 func handleServerPacket(conn *udpnetwork.Connection, data []byte, channel udpnetwork.Channel) {
 	u := game.UnmarshalRequest(data)
-	// fmt.Println("Data: ", u)
 	if u.Endpoint == 1 {
 		np := u.PayloadToRequestJoin()
 		np.Conn = conn
 		u.Payload = np
 	}
+	// fmt.Println("data: ", u)
 	game.Mult.Write(u)
 }

@@ -1,9 +1,5 @@
 package game
 
-import (
-	"math"
-)
-
 type ActionShootResponse struct {
 	Id       int
 	PlayerId int
@@ -17,8 +13,9 @@ func NewActionShootResponse(id, playerId int, pos_x, pos_y float64) *ActionShoot
 	}
 }
 
-func (a *ActionShootResponse) CheckCulled(pos_x, pos_y, fov float64) bool {
-	if math.Pow((pos_x-a.Pos_x), 2)+math.Pow((pos_y-a.Pos_y), 2) < math.Pow(fov, 2) {
+func (h *ActionShootResponse) CheckCulled(pos_x, pos_y, fov float64) bool {
+	dist := (h.Pos_x-pos_x)*(h.Pos_x-pos_x) + (h.Pos_y-pos_y)*(h.Pos_y-pos_y)
+	if dist <= fov*fov {
 		return true
 	} else {
 		return false
