@@ -16,14 +16,14 @@ type BulletType struct {
 var bullet_db = [...]BulletType{
 	BulletType{
 		1,
-		5,
+		7,
 		15,
 		1,
 		12,
 	},
 	BulletType{
 		2,
-		10,
+		12,
 		20,
 		1,
 		16,
