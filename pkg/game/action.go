@@ -1,13 +1,13 @@
 package game
 
 type ActionShootResponse struct {
-	Id       int32
+	Id       uint
 	PlayerId int
 	Pos_x    float64
 	Pos_y    float64
 }
 
-func NewActionShootResponse(id int32, playerId int, pos_x, pos_y float64) *ActionShootResponse {
+func NewActionShootResponse(id uint, playerId int, pos_x, pos_y float64) *ActionShootResponse {
 	return &ActionShootResponse{
 		id, playerId, pos_x, pos_y,
 	}

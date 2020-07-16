@@ -36,7 +36,7 @@ type World struct {
 	deltaTime100Hz       float64
 	currTime100Hz        int64
 	lastTime100Hz        int64
-	action_shoot_counter int32
+	action_shoot_counter uint
 }
 
 func NewWorld(Max_player int) *World {
