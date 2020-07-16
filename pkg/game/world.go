@@ -402,7 +402,7 @@ func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 
 func (w *World) GenerateSnapshotReliable(seq int32) []byte {
 	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.ListActionShootToArray())
-	fmt.Println("Snap: ", n)
+	// fmt.Println("Snap: ", n)
 	b := n.MarshalSnapshot()
 	return b
 }
