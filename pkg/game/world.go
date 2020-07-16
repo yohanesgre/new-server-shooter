@@ -36,7 +36,7 @@ type World struct {
 	deltaTime100Hz       float64
 	currTime100Hz        int64
 	lastTime100Hz        int64
-	action_shoot_counter uint
+	action_shoot_counter int
 }
 
 func NewWorld(Max_player int) *World {
@@ -113,6 +113,9 @@ func (w *World) RequestHandler(_r Request) {
 		h.UpdatePlayerHitBox(p)
 		// mutex.Unlock()
 	case SHOOT:
+		if w.action_shoot_counter >= 125 {
+			w.action_shoot_counter = 0
+		}
 		w.action_shoot_counter = w.action_shoot_counter + 1
 		r := _r.PayloadToRequestShoot()
 		p := w.FindPlayerInListById(r.Id)

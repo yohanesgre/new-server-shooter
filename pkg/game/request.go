@@ -40,7 +40,7 @@ type RequestShoot struct {
 }
 
 type RequestShootDone struct {
-	Id uint
+	Id int
 }
 
 type RequestBulletColided struct {
@@ -119,7 +119,7 @@ func (r *Request) PayloadToRequestShoot() *RequestShoot {
 func (r *Request) PayloadToRequestShootDone() *RequestShootDone {
 	p := r.Payload.(map[string]interface{})
 	return &RequestShootDone{
-		uint(p["Id"].(uint)),
+		int(p["Id"].(int8)),
 	}
 }
 
