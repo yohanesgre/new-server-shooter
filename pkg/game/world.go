@@ -37,9 +37,10 @@ type World struct {
 	currTime100Hz        int64
 	lastTime100Hz        int64
 	action_shoot_counter int
+	isNetworkBindCulling bool
 }
 
-func NewWorld(Max_player int) *World {
+func NewWorld(Max_player int, culling bool) *World {
 	w := new(World)
 	w.Max_player = Max_player
 	w.List_player.Init()
@@ -50,6 +51,7 @@ func NewWorld(Max_player int) *World {
 	SeedSpawnerPlayer(Max_player)
 	Mult = NewMultiplexer(120)
 	w.action_shoot_counter = 0
+	w.isNetworkBindCulling = culling
 	return w
 }
 
@@ -338,13 +340,22 @@ func (w *World) StartWorld() {
 			}
 		}
 		if w.start_game {
-			for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
-				p := temp.Value.(*Player)
-				wg.Add(1)
-				// fmt.Println("Before Filtered Snapshot: ", p)
-				go w.sendFilteredSnapshot(seq_counter, p, &wg)
+			if w.isNetworkBindCulling {
+				for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+					p := temp.Value.(*Player)
+					wg.Add(1)
+					// fmt.Println("Before Filtered Snapshot: ", p)
+					go w.sendFilteredSnapshot(seq_counter, p, &wg)
+				}
+				wg.Wait()
+			} else {
+				for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+					p := temp.Value.(*Player)
+					wg.Add(1)
+					// fmt.Println("Before Filtered Snapshot: ", p)
+					go w.sendSnapshot(seq_counter, p, &wg)
+				}
 			}
-			wg.Wait()
 		}
 		return nil
 	}
@@ -366,6 +377,12 @@ func (w *World) StopWorld() {
 
 func (w *World) sendFilteredSnapshot(seq int32, p *Player, wg *sync.WaitGroup) {
 	s := w.GenerateSnapshot(seq, p)
+	p.Conn.SendUnreliableOrdered(s)
+	wg.Done()
+}
+
+func (w *World) sendSnapshot(seq int32, p *Player, wg *sync.WaitGroup) {
+	s := w.GenerateSnapshotReliable(seq)
 	p.Conn.SendUnreliableOrdered(s)
 	wg.Done()
 }
