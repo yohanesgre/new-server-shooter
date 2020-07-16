@@ -119,7 +119,7 @@ func (r *Request) PayloadToRequestShoot() *RequestShoot {
 func (r *Request) PayloadToRequestShootDone() *RequestShootDone {
 	p := r.Payload.(map[string]interface{})
 	return &RequestShootDone{
-		int32(p["Id"].(uint8)),
+		int32(p["Id"].(int32)),
 	}
 }
 
