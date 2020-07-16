@@ -36,7 +36,7 @@ func main() {
 			return
 		}
 		defer conn.Close()
-		fmt.Println("Welcome")
+		fmt.Println("Welcome ", conn.RemoteAddr().String())
 		conn.Write([]byte("Welcome"))
 
 		go handleConn(conn)

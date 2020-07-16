@@ -23,7 +23,7 @@ type Lobby struct {
 }
 
 const (
-	MAX_PLAYER   int    = 5
+	MAX_PLAYER   int    = 10
 	SERVER_HOST  string = "yohanesgre.tech"
 	INITIAL_PORT int    = 10000
 )

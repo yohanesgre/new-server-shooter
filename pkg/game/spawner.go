@@ -46,8 +46,22 @@ func SeedSpawnerPlayer(_ammount int) {
 		} else if counter == 4 {
 			temp = &SpawnerPlayer{
 				Id:     i + 1,
-				Pos_x:  RandFloat64(-2.0, -1.0),
-				Pos_y:  RandFloat64(-2.0, -1.0),
+				Pos_x:  RandFloat64(14.25, 31),
+				Pos_y:  RandFloat64(-19.51, -13.84),
+				Filled: false,
+			}
+		} else if counter == 5 {
+			temp = &SpawnerPlayer{
+				Id:     i + 1,
+				Pos_x:  RandFloat64(-30, -17),
+				Pos_y:  RandFloat64(-21, -15),
+				Filled: false,
+			}
+		} else if counter == 6 {
+			temp = &SpawnerPlayer{
+				Id:     i + 1,
+				Pos_x:  RandFloat64(-32, -25),
+				Pos_y:  RandFloat64(-2, 5),
 				Filled: false,
 			}
 			counter = 0
