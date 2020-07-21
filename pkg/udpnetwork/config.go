@@ -17,7 +17,7 @@ var (
 	CfgParallelListenerCount = 4
 
 	// CfgMaxSendReceiveQueueSize is the max size of packets that can be queued up before they are processed.
-	CfgMaxSendReceiveQueueSize = 100
+	CfgMaxSendReceiveQueueSize = 1000
 
 	// CfgMaxPacketChainLength is the max length of packets that are chained when waiting for missing sequence.
 	CfgMaxPacketChainLength byte = 255
