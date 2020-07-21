@@ -16,7 +16,7 @@ var (
 	mutex       = &sync.Mutex{}
 )
 
-const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 40)
+const Hz30Delay time.Duration = time.Duration(int64(time.Second) / 50)
 const Hz200Delay time.Duration = time.Duration(int64(time.Second) / 120)
 
 type World struct {

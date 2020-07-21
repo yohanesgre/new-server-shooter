@@ -15,7 +15,7 @@ const (
 	Bottom   Direction   = 2
 	Right    Direction   = 3
 	Left     Direction   = 4
-	speed                = 3
+	speed                = 5
 )
 
 type Player struct {
