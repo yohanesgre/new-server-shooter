@@ -27,7 +27,7 @@ var (
 	// CfgSequenceBufferSize is the size of the buffer that store the last received packets in order to ack them.
 	// Size should be big enough that packets are at least overridden twice (max_sequence % size > 32 && max_sequence / size >= 2).
 	// (max_sequence = highest possible sequence number = max value of sequenceNumber)
-	CfgSequenceBufferSize sequenceNumber = 200
+	CfgSequenceBufferSize sequenceNumber = 10000
 
 	// CfgMaxSkippedPackets is the max amount of that are allowed to be skipped during packet loss (should be less than 32).
 	CfgMaxSkippedPackets sequenceNumber = 25
