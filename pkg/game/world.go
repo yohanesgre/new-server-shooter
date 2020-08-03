@@ -3,6 +3,7 @@ package game
 import (
 	"container/list"
 	"fmt"
+	"math"
 	"sync"
 	"time"
 
@@ -23,6 +24,8 @@ type World struct {
 	id                   int
 	Max_player           int
 	List_conn            list.List
+	List_agent           list.List
+	List_agent_hitbox    list.List
 	List_player_hitbox   list.List
 	List_player          list.List
 	list_bullet          list.List
@@ -48,10 +51,13 @@ func NewWorld(Max_player int, culling bool) *World {
 	w.list_weapon.Init()
 	w.list_action_shoot.Init()
 	w.List_conn.Init()
+	w.List_agent.Init()
+	w.List_agent_hitbox.Init()
 	SeedSpawnerPlayer(Max_player)
 	Mult = NewMultiplexer(120)
 	w.action_shoot_counter = 0
 	w.isNetworkBindCulling = culling
+	w.spawnAgents(100)
 	return w
 }
 
@@ -188,6 +194,30 @@ func (w *World) FindPlayerInListByConn(conn *udpnetwork.Connection) *Player {
 	return result
 }
 
+//Find Player Pointer in List Of Players' Pointer
+func (w *World) FindAgentInList(_agent *Agent) *Agent {
+	var result *Agent
+	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+		_p := temp.Value.(*Agent)
+		if _p.Id == _agent.Id {
+			result = _p
+		}
+	}
+	return result
+}
+
+//Find Player Pointer in List Of Players' Pointer
+func (w *World) FindAgentInListById(id int) *Agent {
+	var result *Agent
+	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+		_p := temp.Value.(*Agent)
+		if _p.Id == id {
+			result = _p
+		}
+	}
+	return result
+}
+
 //Find Bullet Pointer in List Of Bullets' Pointer
 func (w *World) FindBulletInList(_bullet *Bullet) *Bullet {
 	var result *Bullet
@@ -207,6 +237,30 @@ func (w *World) FindWeaponDropInList(_weapon *WeaponDrop) *WeaponDrop {
 		_w := temp.Value.(*WeaponDrop)
 		if _w.Id == _weapon.Id {
 			result = _w
+		}
+	}
+	return result
+}
+
+//Find PlayerHitBox Pointer in List Of PlayerHitBox' Pointer with Player
+func (w *World) FindAgentHitBoxInList(_agent *Agent) *AgentHitBox {
+	var result *AgentHitBox
+	for temp := w.List_agent_hitbox.Front(); temp != nil; temp = temp.Next() {
+		_h := temp.Value.(*AgentHitBox)
+		if _h.Id == _agent.Id {
+			result = _h
+		}
+	}
+	return result
+}
+
+//Find PlayerHitBox Pointer in List Of PlayerHitBox' Pointer with HittedId
+func (w *World) FindAgentHitBoxInListByHittedId(_hittedId int) *AgentHitBox {
+	var result *AgentHitBox
+	for temp := w.List_agent_hitbox.Front(); temp != nil; temp = temp.Next() {
+		_h := temp.Value.(*AgentHitBox)
+		if _h.Id == _hittedId {
+			result = _h
 		}
 	}
 	return result
@@ -262,6 +316,14 @@ func (w *World) ListPlayerToArray() []Player {
 	return result
 }
 
+func (w *World) ListAgentToArray() []Agent {
+	result := make([]Agent, 0, 1000)
+	for temp := w.List_agent.Front(); temp != nil; temp = temp.Next() {
+		result = append(result, *temp.Value.(*Agent))
+	}
+	return result
+}
+
 func (w *World) ListBulletToArray() []Bullet {
 	result := make([]Bullet, 0, w.list_bullet.Len())
 	for temp := w.list_bullet.Front(); temp != nil; temp = temp.Next() {
@@ -274,6 +336,14 @@ func (w *World) ListHitboxToArray() []PlayerHitBox {
 	result := make([]PlayerHitBox, 0, w.List_player_hitbox.Len())
 	for temp := w.List_player_hitbox.Front(); temp != nil; temp = temp.Next() {
 		result = append(result, *temp.Value.(*PlayerHitBox))
+	}
+	return result
+}
+
+func (w *World) ListAgentHitboxToArray() []AgentHitBox {
+	result := make([]AgentHitBox, 0, w.List_agent_hitbox.Len())
+	for temp := w.List_agent_hitbox.Front(); temp != nil; temp = temp.Next() {
+		result = append(result, *temp.Value.(*AgentHitBox))
 	}
 	return result
 }
@@ -393,7 +463,8 @@ func (w *World) AddConn(conn *udpnetwork.Connection) {
 
 func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 	arH, arP := w.generateFilteredPlayerArray(p)
-	n := NewSnapshot(seq, w.Timestamp, arP, arH, w.ListActionShootToArray())
+	arAh, arA := w.generateFilteredAgentArray(p)
+	n := NewSnapshot(seq, w.Timestamp, arP, arH, arA, arAh, w.ListActionShootToArray())
 	// n := NewSnapshot(seq, w.Timestamp, []Player{Player{1, "TEST12345", 123, 41, 234, 231, 23123, 123, 123, Idling}}, w.ListHitboxToArray(), w.list_action_shoot)
 	b := n.MarshalSnapshot()
 	// if p.Id == 1 {
@@ -403,7 +474,7 @@ func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 }
 
 func (w *World) GenerateSnapshotReliable(seq int32) []byte {
-	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.ListActionShootToArray())
+	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.ListAgentToArray(), w.ListAgentHitboxToArray(), w.ListActionShootToArray())
 	// fmt.Println("Snap: ", n)
 	b := n.MarshalSnapshot()
 	return b
@@ -442,6 +513,28 @@ func (w *World) generateFilteredPlayerArray(player *Player) ([]PlayerHitBox, []P
 	return arH, arP
 }
 
+func (w *World) generateFilteredAgentArray(player *Player) ([]AgentHitBox, []Agent) {
+	var arH = make([]AgentHitBox, 0, w.List_agent_hitbox.Len())
+	var arP = make([]Agent, 0, w.List_agent.Len())
+	for temp := w.List_agent.Front(); temp != nil; temp = temp.Next() {
+		a := temp.Value.(*Agent)
+
+		if a.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
+			arH = append(arH, *w.FindAgentHitBoxInList(a))
+			arP = append(arP, *a)
+		} else {
+			arH = append(arH, AgentHitBox{})
+			arP = append(arP, Agent{})
+		}
+		// } else {
+		// 	arH = append(arH, *w.FindPlayerHitBoxInList(p))
+		// 	arP = append(arP, *player)
+		// }
+	}
+	// fmt.Println("Player: ", player, "| arP: ", arP)
+	return arH, arP
+}
+
 func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootResponse {
 	var result = make([]ActionShootResponse, 0, w.list_action_shoot.Len())
 	for temp := w.list_action_shoot.Front(); temp != nil; temp = temp.Next() {
@@ -453,6 +546,24 @@ func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootRe
 		}
 	}
 	return result
+}
+
+func (w *World) spawnAgents(max int) {
+	var x float64
+	var y float64
+	var angle float64
+
+	a := 0.1
+	b := 0.1
+
+	for i := 0; i < max; i++ {
+		angle = 0.1 * 1
+		x = (a + b*angle) * math.Cos(angle)
+		y = (a + b*angle) * math.Sin(angle)
+		agent := NewAgent(i+1, x, y)
+		w.List_agent.PushBack(agent)
+		w.List_agent_hitbox.PushBack(agent.Hitbox)
+	}
 }
 
 // if w.list_bullet.Len() != 0 {

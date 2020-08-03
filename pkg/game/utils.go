@@ -7,6 +7,11 @@ import (
 	"github.com/yohanesgre/new-server-shooter/pkg/udpnetwork"
 )
 
+//Random Direction
+func RandDirection(min, max int) int {
+	return min + rand.Int()*(max-min)
+}
+
 //Random float64
 func RandFloat64(min, max float64) float64 {
 	return min + rand.Float64()*(max-min)
