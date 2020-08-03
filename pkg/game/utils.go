@@ -54,3 +54,16 @@ func RemoveConnElementAt(s []*udpnetwork.Connection, i int) []*udpnetwork.Connec
 	// We do not need to put s[i] at the end, as it will be discarded anyway
 	return s[:len(s)-1]
 }
+
+func CastInterfaceToInt32(val interface{}) int32 {
+	switch i := val.(type) {
+	case int8:
+		return int32(i)
+	case int16:
+		return int32(i)
+	case int32:
+		return int32(i)
+	default:
+		return 0
+	}
+}

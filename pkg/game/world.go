@@ -57,7 +57,7 @@ func NewWorld(Max_player int, culling bool) *World {
 	Mult = NewMultiplexer(120)
 	w.action_shoot_counter = 0
 	w.isNetworkBindCulling = culling
-	w.spawnAgents(100)
+	w.spawnAgents(500)
 	return w
 }
 
@@ -141,12 +141,12 @@ func (w *World) RequestHandler(_r Request) {
 		r := _r.PayloadToRequestBulletColided()
 		// fmt.Printf("payload: %#v\n", r)
 		// fmt.Printf("hitted id: %#v\n", r.HittedId)
-		hitbox := w.FindPlayerHitBoxInListByHittedId(r.HittedId)
+		hitbox := w.FindAgentHitBoxInListByHittedId(r.HittedId)
 		// fmt.Printf("hitbox: %#v\n", hitbox)
 		if hitbox.CheckHit(r.HittedId, r.Pos_x, r.Pos_y) {
 			dmg := FindBulletType(FindWeaponType(r.WeaponId).Bullet_id).Damage
 			// fmt.Println("Dmg: ", dmg)
-			w.FindPlayerInListById(r.HittedId).HitPlayer(dmg)
+			w.FindAgentInListById(r.HittedId).HitAgent(dmg)
 			// fmt.Println("Hp: ", w.FindPlayerInListById(r.HittedId).Hp)
 		}
 	}
@@ -197,7 +197,7 @@ func (w *World) FindPlayerInListByConn(conn *udpnetwork.Connection) *Player {
 //Find Player Pointer in List Of Players' Pointer
 func (w *World) FindAgentInList(_agent *Agent) *Agent {
 	var result *Agent
-	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+	for temp := w.List_agent.Front(); temp != nil; temp = temp.Next() {
 		_p := temp.Value.(*Agent)
 		if _p.Id == _agent.Id {
 			result = _p
@@ -207,9 +207,9 @@ func (w *World) FindAgentInList(_agent *Agent) *Agent {
 }
 
 //Find Player Pointer in List Of Players' Pointer
-func (w *World) FindAgentInListById(id int) *Agent {
+func (w *World) FindAgentInListById(id int32) *Agent {
 	var result *Agent
-	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
+	for temp := w.List_agent.Front(); temp != nil; temp = temp.Next() {
 		_p := temp.Value.(*Agent)
 		if _p.Id == id {
 			result = _p
@@ -255,7 +255,7 @@ func (w *World) FindAgentHitBoxInList(_agent *Agent) *AgentHitBox {
 }
 
 //Find PlayerHitBox Pointer in List Of PlayerHitBox' Pointer with HittedId
-func (w *World) FindAgentHitBoxInListByHittedId(_hittedId int) *AgentHitBox {
+func (w *World) FindAgentHitBoxInListByHittedId(_hittedId int32) *AgentHitBox {
 	var result *AgentHitBox
 	for temp := w.List_agent_hitbox.Front(); temp != nil; temp = temp.Next() {
 		_h := temp.Value.(*AgentHitBox)
@@ -316,10 +316,10 @@ func (w *World) ListPlayerToArray() []Player {
 	return result
 }
 
-func (w *World) ListAgentToArray() []Agent {
-	result := make([]Agent, 0, 1000)
+func (w *World) ListAgentToArray() []AgentSnapshot {
+	result := make([]AgentSnapshot, 0, 1000)
 	for temp := w.List_agent.Front(); temp != nil; temp = temp.Next() {
-		result = append(result, *temp.Value.(*Agent))
+		result = append(result, NewAgentSnapshot(temp.Value.(*Agent)))
 	}
 	return result
 }
@@ -387,7 +387,7 @@ func (w *World) DestroyBullet(_bullet *Bullet) {
 }
 
 func (w *World) StartWorld() {
-	var wg sync.WaitGroup
+	// var wg sync.WaitGroup
 	w.initTime = MakeTimestamp()
 	w.lastTime100Hz = w.initTime
 	loop, _ := gloop.NewLoop(nil, nil, Hz200Delay, Hz30Delay)
@@ -413,20 +413,20 @@ func (w *World) StartWorld() {
 			if w.isNetworkBindCulling {
 				for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
 					p := temp.Value.(*Player)
-					wg.Add(1)
+					// wg.Add(1)
 					// fmt.Println("Before Filtered Snapshot: ", p)
-					go w.sendFilteredSnapshot(seq_counter, p, &wg)
+					go w.sendFilteredSnapshot(seq_counter, p)
 				}
-				wg.Wait()
 			} else {
 				for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
 					p := temp.Value.(*Player)
-					wg.Add(1)
+					//wg.Add(1)
 					// fmt.Println("Before Filtered Snapshot: ", p)
-					go w.sendSnapshot(seq_counter, p, &wg)
+					go w.sendSnapshot(seq_counter, p)
 				}
 			}
 		}
+		// wg.Wait()
 		return nil
 	}
 	w.game_loop.Render = render
@@ -445,26 +445,25 @@ func (w *World) StopWorld() {
 	w.game_loop.Done()
 }
 
-func (w *World) sendFilteredSnapshot(seq int32, p *Player, wg *sync.WaitGroup) {
-	s := w.GenerateSnapshot(seq, p)
+func (w *World) sendFilteredSnapshot(seq int32, p *Player) {
+	// defer wg.Done()
+	s := w.GenerateSnapshotFiltered(seq, p)
 	p.Conn.SendUnreliableOrdered(s)
-	wg.Done()
 }
 
-func (w *World) sendSnapshot(seq int32, p *Player, wg *sync.WaitGroup) {
-	s := w.GenerateSnapshotReliable(seq)
+func (w *World) sendSnapshot(seq int32, p *Player) {
+	s := w.GenerateSnapshot(seq)
 	p.Conn.SendUnreliableOrdered(s)
-	wg.Done()
 }
 
 func (w *World) AddConn(conn *udpnetwork.Connection) {
 	w.List_conn.PushBack(conn)
 }
 
-func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
-	arH, arP := w.generateFilteredPlayerArray(p)
-	arAh, arA := w.generateFilteredAgentArray(p)
-	n := NewSnapshot(seq, w.Timestamp, arP, arH, arA, arAh, w.ListActionShootToArray())
+func (w *World) GenerateSnapshotFiltered(seq int32, p *Player) []byte {
+	arP := w.generateFilteredPlayerArray(p)
+	arA := w.generateFilteredAgentArray(p)
+	n := NewSnapshot(seq, w.Timestamp, arP, arA, w.ListActionShootToArray())
 	// n := NewSnapshot(seq, w.Timestamp, []Player{Player{1, "TEST12345", 123, 41, 234, 231, 23123, 123, 123, Idling}}, w.ListHitboxToArray(), w.list_action_shoot)
 	b := n.MarshalSnapshot()
 	// if p.Id == 1 {
@@ -473,8 +472,15 @@ func (w *World) GenerateSnapshot(seq int32, p *Player) []byte {
 	return b
 }
 
+func (w *World) GenerateSnapshot(seq int32) []byte {
+	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListAgentToArray(), w.ListActionShootToArray())
+	// fmt.Println("Snap: ", n)
+	b := n.MarshalSnapshot()
+	return b
+}
+
 func (w *World) GenerateSnapshotReliable(seq int32) []byte {
-	n := NewSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListHitboxToArray(), w.ListAgentToArray(), w.ListAgentHitboxToArray(), w.ListActionShootToArray())
+	n := NewReliableSnapshot(seq, w.Timestamp, w.ListPlayerToArray(), w.ListActionShootToArray())
 	// fmt.Println("Snap: ", n)
 	b := n.MarshalSnapshot()
 	return b
@@ -491,17 +497,17 @@ func (w *World) GenerateSnapshotReliable(seq int32) []byte {
 // 	return result
 // }
 
-func (w *World) generateFilteredPlayerArray(player *Player) ([]PlayerHitBox, []Player) {
-	var arH = make([]PlayerHitBox, 0, w.List_player_hitbox.Len())
+func (w *World) generateFilteredPlayerArray(player *Player) []Player {
+	// var arH = make([]PlayerHitBox, 0, w.List_player_hitbox.Len())
 	var arP = make([]Player, 0, w.List_player.Len())
 	for temp := w.List_player.Front(); temp != nil; temp = temp.Next() {
 		p := temp.Value.(*Player)
 
 		if p.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
-			arH = append(arH, *w.FindPlayerHitBoxInList(p))
+			// arH = append(arH, *w.FindPlayerHitBoxInList(p))
 			arP = append(arP, *p)
 		} else {
-			arH = append(arH, PlayerHitBox{})
+			// arH = append(arH, PlayerHitBox{})
 			arP = append(arP, Player{})
 		}
 		// } else {
@@ -510,29 +516,34 @@ func (w *World) generateFilteredPlayerArray(player *Player) ([]PlayerHitBox, []P
 		// }
 	}
 	// fmt.Println("Player: ", player, "| arP: ", arP)
-	return arH, arP
+	return arP
 }
 
-func (w *World) generateFilteredAgentArray(player *Player) ([]AgentHitBox, []Agent) {
-	var arH = make([]AgentHitBox, 0, w.List_agent_hitbox.Len())
-	var arP = make([]Agent, 0, w.List_agent.Len())
+func (w *World) generateFilteredAgentArray(player *Player) []AgentSnapshot {
+	// var arH = make([]AgentHitBox, 0, w.List_agent_hitbox.Len())
+	var arP = make([]AgentSnapshot, 0, w.List_agent.Len())
+	var wg sync.WaitGroup
 	for temp := w.List_agent.Front(); temp != nil; temp = temp.Next() {
+		wg.Add(1)
 		a := temp.Value.(*Agent)
-
-		if a.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
-			arH = append(arH, *w.FindAgentHitBoxInList(a))
-			arP = append(arP, *a)
-		} else {
-			arH = append(arH, AgentHitBox{})
-			arP = append(arP, Agent{})
-		}
+		go func() {
+			defer wg.Done()
+			if a.CheckCulled(player.Pos_x, player.Pos_y, player.FOV) {
+				// arH = append(arH, *w.FindAgentHitBoxInList(a))
+				arP = append(arP, NewAgentSnapshot(a))
+			} else {
+				// arH = append(arH, AgentHitBox{})
+				arP = append(arP, AgentSnapshot{})
+			}
+		}()
 		// } else {
 		// 	arH = append(arH, *w.FindPlayerHitBoxInList(p))
 		// 	arP = append(arP, *player)
 		// }
 	}
+	wg.Wait()
 	// fmt.Println("Player: ", player, "| arP: ", arP)
-	return arH, arP
+	return arP
 }
 
 func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootResponse {
@@ -549,21 +560,30 @@ func (w *World) generateFilteredActionShootArray(player *Player) []ActionShootRe
 }
 
 func (w *World) spawnAgents(max int) {
-	var x float64
-	var y float64
-	var angle float64
+	p2c := func(r, phi float64) (float64, float64) {
+		return r * math.Cos(phi), r * math.Sin(phi)
+	}
 
-	a := 0.1
-	b := 0.1
+	arc := 4.0
+	sep := 1.0
 
-	for i := 0; i < max; i++ {
-		angle = 0.1 * 1
-		x = (a + b*angle) * math.Cos(angle)
-		y = (a + b*angle) * math.Sin(angle)
-		agent := NewAgent(i+1, x, y)
+	r := arc
+	b := sep / (2 * math.Pi)
+	phi := r / b
+	var counter int32
+
+	remaining := max
+	for remaining > 0 {
+		counter++
+		x, y := p2c(r, phi)
+		agent := NewAgent(counter, x, y)
 		w.List_agent.PushBack(agent)
 		w.List_agent_hitbox.PushBack(agent.Hitbox)
+		phi += arc / r
+		r = b * phi
+		remaining--
 	}
+	fmt.Println("Length List agent: ", w.List_agent.Len())
 }
 
 // if w.list_bullet.Len() != 0 {

@@ -17,7 +17,7 @@ var (
 
 func main() {
 	var port = flag.String("port", "10001", "Make new server in a new port")
-	var numPlayers = flag.Int("numPlayers", 2, "Insert Connected Players")
+	var numPlayers = flag.Int("numPlayers", 1, "Insert Connected Players")
 	flag.Parse()
 
 	server := udpnetwork.NewServer(":" + *port)

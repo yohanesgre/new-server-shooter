@@ -1,24 +1,47 @@
 package game
 
 import (
+	"math"
 	"math/rand"
 	"time"
 )
 
-type Agent struct {
-	Id       int
+type AgentSnapshot struct {
+	Id       int32
 	Pos_x    float64
 	Pos_y    float64
 	Rotation float64
 	Hp       float64
 	State    PlayerState
-	Hitbox   *AgentHitBox
-	Ticker   *time.Ticker
-	Done     chan bool
 }
 
-func NewAgent(id int, pos_x, pos_y float64) *Agent {
-	ticker := time.NewTicker(15 * time.Millisecond)
+func NewAgentSnapshot(agent *Agent) AgentSnapshot {
+	return AgentSnapshot{
+		agent.Id,
+		agent.Pos_x,
+		agent.Pos_y,
+		agent.Rotation,
+		agent.Hp,
+		agent.State,
+	}
+}
+
+type Agent struct {
+	Id        int32
+	Pos_x     float64
+	Pos_y     float64
+	Rotation  float64
+	Hp        float64
+	State     PlayerState
+	Hitbox    *AgentHitBox
+	Ticker    *time.Ticker
+	LastTime  int64
+	DeltaTime float64
+	Done      chan bool
+}
+
+func NewAgent(id int32, pos_x, pos_y float64) *Agent {
+	ticker := time.NewTicker(200 * time.Millisecond)
 	agent := new(Agent)
 	agent.Id = id
 	agent.Pos_x = pos_x
@@ -28,15 +51,19 @@ func NewAgent(id int, pos_x, pos_y float64) *Agent {
 	agent.Ticker = ticker
 	agent.Done = make(chan bool)
 	agent.Hitbox = NewAgentHitBox(agent)
-	rand.Seed(time.Now().UnixNano())
+	agent.LastTime = MakeTimestamp()
 	go func() {
 		for {
 			select {
 			case <-agent.Done:
 				agent.Ticker.Stop()
 				break
-			case <-ticker.C:
-				agent.MoveAgent(Direction(RandDirection(1, 4)), RandFloat64(0, 360))
+			case t := <-ticker.C:
+				rand.Seed(time.Now().UnixNano())
+				currTime := t.UnixNano() / int64(time.Millisecond)
+				agent.DeltaTime = float64(currTime-agent.LastTime) / 1000
+				agent.LastTime = currTime
+				agent.MoveAgent(Direction(rand.Intn(4-1+1)+1), agent.DeltaTime)
 				agent.Hitbox.UpdateAgentHitBox(agent)
 			}
 		}
@@ -44,24 +71,27 @@ func NewAgent(id int, pos_x, pos_y float64) *Agent {
 	return agent
 }
 
-func (a *Agent) MoveAgent(_d Direction, _a float64) {
+func (a *Agent) HitAgent(_dmg float64) {
+	a.Hp = a.Hp - _dmg
+}
+
+func (a *Agent) MoveAgent(_d Direction, dt float64) {
 	switch _d {
 	case Top:
-		a.Pos_y = Lerp(a.Pos_y, a.Pos_y+speed, 16.6666667)
+		a.Pos_y = Lerp(a.Pos_y, a.Pos_y+1, dt)
 		a.UpdateState(Walking)
 	case Bottom:
-		a.Pos_y = Lerp(a.Pos_y, a.Pos_y-speed, 16.6666667)
+		a.Pos_y = Lerp(a.Pos_y, a.Pos_y-1, dt)
 		a.UpdateState(Walking)
 	case Right:
-		a.Pos_x = Lerp(a.Pos_x, a.Pos_x+speed, 16.6666667)
+		a.Pos_x = Lerp(a.Pos_x, a.Pos_x+1, dt)
 		a.UpdateState(Walking)
 	case Left:
-		a.Pos_x = Lerp(a.Pos_x, a.Pos_x-speed, 16.6666667)
+		a.Pos_x = Lerp(a.Pos_x, a.Pos_x-1, dt)
 		a.UpdateState(Walking)
 	case 0:
 		a.UpdateState(Idling)
 	}
-	a.Rotation = _a
 }
 
 func (a *Agent) UpdateState(_state PlayerState) {
@@ -69,10 +99,5 @@ func (a *Agent) UpdateState(_state PlayerState) {
 }
 
 func (h *Agent) CheckCulled(pos_x, pos_y, fov float64) bool {
-	dist := (h.Pos_x-pos_x)*(h.Pos_x-pos_x) + (h.Pos_y-pos_y)*(h.Pos_y-pos_y)
-	if dist <= fov*fov {
-		return true
-	} else {
-		return false
-	}
+	return (math.Pow(h.Pos_x-pos_x, 2) + math.Pow(h.Pos_y-pos_y, 2)) <= math.Pow(fov, 2)
 }

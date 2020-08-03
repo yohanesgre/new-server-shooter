@@ -44,7 +44,7 @@ type RequestShootDone struct {
 }
 
 type RequestBulletColided struct {
-	HittedId int
+	HittedId int32
 	Pos_x    float64
 	Pos_y    float64
 	WeaponId int
@@ -100,7 +100,7 @@ func (r *Request) PayloadToRequestJoin() *RequestJoin {
 func (r *Request) PayloadToRequestBulletColided() *RequestBulletColided {
 	p := r.Payload.(map[string]interface{})
 	return &RequestBulletColided{
-		int(p["HittedId"].(int8)),
+		CastInterfaceToInt32(p["HittedId"]),
 		p["Pos_x"].(float64),
 		p["Pos_y"].(float64),
 		int(p["WeaponId"].(int8)),

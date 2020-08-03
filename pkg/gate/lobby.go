@@ -181,7 +181,7 @@ func DeleteConnMemberInLobby(conns []net.Conn, conn net.Conn) error {
 func StartGame(id int) {
 	l := FindLobbyById(id)
 	fmt.Println("selected lobby: ", l)
-	if l.NumPlayers > 1 {
+	if l.NumPlayers >= 1 {
 		StartServer(l.Port, l.Id, l.NumPlayers)
 		for _, c := range l.Conn {
 			r := Response{int(SERVER_START), MakeLobbiesResponse()}

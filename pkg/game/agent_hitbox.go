@@ -6,7 +6,7 @@ import (
 )
 
 type AgentHitBox struct {
-	Id       int
+	Id       int32
 	Pos_x    float64
 	Pos_y    float64
 	Height   float64
@@ -59,4 +59,35 @@ func (h *AgentHitBox) CheckCollision(list list.List) (bool, float64, *Bullet) {
 		break
 	}
 	return hit, dmg, bullet
+}
+
+func (h *AgentHitBox) CheckHit(id int32, pos_x, pos_y float64) bool {
+
+	// temporary variables to set edges for testing
+	testX := pos_x
+	testY := pos_y
+
+	// which edge is closest?
+	if pos_x < h.Pos_x { // test left edge
+		testX = h.Pos_x
+	} else if pos_x > (h.Pos_x + h.Width) { // right edge
+		testX = h.Pos_x + h.Width
+	}
+
+	if pos_x < h.Pos_y { // top edge
+		testY = h.Pos_y
+	} else if pos_y > (h.Pos_y + h.Height) { // bottom edge
+		testY = h.Pos_y + h.Height
+	}
+
+	// get distance from closest edges
+	distX := pos_x - testX
+	distY := pos_y - testY
+	distance := math.Sqrt((distX * distX) + (distY * distY))
+
+	// if the distance is less than the radius, collision!
+	if distance <= 2 {
+		return true
+	}
+	return false
 }

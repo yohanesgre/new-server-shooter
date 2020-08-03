@@ -29,7 +29,7 @@ type Player struct {
 	Ammo        int
 	WeaponOwned int
 	State       PlayerState
-	Conn        *udpnetwork.Connection
+	Conn        *udpnetwork.Connection `msgpack:",omitempty"`
 }
 
 func NewPlayer(_id int, _name string, _pos_x, _pos_y, _rotation, _fov float64, conn *udpnetwork.Connection) *Player {
