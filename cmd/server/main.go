@@ -29,7 +29,7 @@ func main() {
 	server.PacketHandler = handleServerPacket
 	server.Start()
 	fmt.Println("server started")
-	world = game.NewWorld(*numPlayers, true)
+	world = game.NewWorld(*numPlayers, false)
 	select {}
 }
 

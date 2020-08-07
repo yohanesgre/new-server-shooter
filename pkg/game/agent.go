@@ -35,6 +35,7 @@ type Agent struct {
 	State     PlayerState
 	Hitbox    *AgentHitBox
 	Ticker    *time.Ticker
+	Counter   int
 	LastTime  int64
 	DeltaTime float64
 	Done      chan bool
@@ -52,22 +53,60 @@ func NewAgent(id int32, pos_x, pos_y float64) *Agent {
 	agent.Done = make(chan bool)
 	agent.Hitbox = NewAgentHitBox(agent)
 	agent.LastTime = MakeTimestamp()
-	go func() {
-		for {
-			select {
-			case <-agent.Done:
-				agent.Ticker.Stop()
-				break
-			case t := <-ticker.C:
-				rand.Seed(time.Now().UnixNano())
-				currTime := t.UnixNano() / int64(time.Millisecond)
-				agent.DeltaTime = float64(currTime-agent.LastTime) / 1000
-				agent.LastTime = currTime
-				agent.MoveAgent(Direction(rand.Intn(4-1+1)+1), agent.DeltaTime)
-				agent.Hitbox.UpdateAgentHitBox(agent)
+	agent.Counter = 0
+	if agent.Id%2 == 0 {
+		go func() {
+			for {
+				select {
+				case <-agent.Done:
+					agent.Ticker.Stop()
+					break
+				case t := <-ticker.C:
+					rand.Seed(time.Now().UnixNano())
+					currTime := t.UnixNano() / int64(time.Millisecond)
+					agent.DeltaTime = float64(currTime-agent.LastTime) / 1000
+					agent.LastTime = currTime
+					agent.MoveAgent(Direction(rand.Intn(4-1+1)+1), agent.DeltaTime)
+					agent.Hitbox.UpdateAgentHitBox(agent)
+				}
 			}
-		}
-	}()
+		}()
+	} else {
+		go func() {
+			for {
+				select {
+				case <-agent.Done:
+					agent.Ticker.Stop()
+					break
+				case t := <-ticker.C:
+					rand.Seed(time.Now().UnixNano())
+					currTime := t.UnixNano() / int64(time.Millisecond)
+					agent.DeltaTime = float64(currTime-agent.LastTime) / 1000
+					agent.LastTime = currTime
+					if agent.Counter == 0 {
+						agent.MoveAgent(Right, agent.DeltaTime)
+						agent.Hitbox.UpdateAgentHitBox(agent)
+					} else if agent.Counter == 1 {
+						agent.MoveAgent(Bottom, agent.DeltaTime)
+						agent.Hitbox.UpdateAgentHitBox(agent)
+					} else if agent.Counter == 2 {
+						agent.MoveAgent(Bottom, agent.DeltaTime)
+						agent.Hitbox.UpdateAgentHitBox(agent)
+					} else if agent.Counter == 3 {
+						agent.MoveAgent(Left, agent.DeltaTime)
+						agent.Hitbox.UpdateAgentHitBox(agent)
+					} else if agent.Counter == 4 {
+						agent.MoveAgent(Top, agent.DeltaTime)
+						agent.Hitbox.UpdateAgentHitBox(agent)
+					} else if agent.Counter == 5 {
+						agent.MoveAgent(Top, agent.DeltaTime)
+						agent.Hitbox.UpdateAgentHitBox(agent)
+						agent.Counter = 0
+					}
+				}
+			}
+		}()
+	}
 	return agent
 }
 
