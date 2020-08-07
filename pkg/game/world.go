@@ -43,7 +43,7 @@ type World struct {
 	isNetworkBindCulling bool
 }
 
-func NewWorld(Max_player int, culling bool) *World {
+func NewWorld(Max_player int, culling bool, agent int) *World {
 	w := new(World)
 	w.Max_player = Max_player
 	w.List_player.Init()
@@ -57,7 +57,7 @@ func NewWorld(Max_player int, culling bool) *World {
 	Mult = NewMultiplexer(120)
 	w.action_shoot_counter = 0
 	w.isNetworkBindCulling = culling
-	w.spawnAgents(500)
+	w.spawnAgents(agent)
 	return w
 }
 
