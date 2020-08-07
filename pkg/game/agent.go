@@ -103,7 +103,7 @@ func NewAgent(id int32, pos_x, pos_y float64) *Agent {
 						agent.Hitbox.UpdateAgentHitBox(agent)
 						agent.Counter = 0
 					}
-					counter++
+					agent.Counter++
 				}
 			}
 		}()
